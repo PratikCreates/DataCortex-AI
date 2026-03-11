@@ -38,6 +38,24 @@ DataCortex-AI operates as a hierarchical multi-agent ecosystem:
 
 ---
 
+## 📈 Benchmarking & Evaluation Framework
+
+DataCortex-AI follows a multi-dimensional evaluation methodology inspired by state-of-the-art benchmarks for data science agents (e.g., **DSEval**).
+
+### 1. Full Lifecycle Assessment
+Unlike static code generation benchmarks, DataCortex-AI is evaluated on its ability to handle the **complete end-to-end data science lifecycle**. This includes multi-step interdependent tasks where the accuracy of the report depends on the quality of the modeling, which in turn depends on the integrity of the data ingestion and cleaning.
+
+### 2. Multi-Dimensional Metrics
+- **Execution Success Rate**: Percentage of agent-generated code blocks that execute without runtime errors in the sandbox.
+- **Analytical Correctness**: Validation of results (metrics, aggregations, model coefficients) against ground-truth hold-out sets.
+- **Data Intactness (Side Effects)**: Rigorous monitoring to ensure data cleaning actions do not inadvertently drop significant rows or corrupt feature distributions.
+- **Agentic Efficiency**: Number of reflection loops and sandbox retries required to reach a SOTA-threshold result.
+
+### 3. Iterative Validation (Agentic RL)
+The system uses an **Iterative Validation Loop** where model performance is treated as a reward signal. The `ModelingAgent` performs recursive hold-out validation to ensure that mutations in the modeling policy consistently improve the target metric (e.g., Accuracy, F1, R²) without overfitting.
+
+---
+
 ## 📊 SOTA Benchmark Performance
 
 The system is rigorously validated against complex datasets, consistently achieving high-precision results:
