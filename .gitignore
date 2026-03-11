@@ -11,8 +11,8 @@ build/
 # Virtual environments
 .venv/
 venv/
-ENV/
 env/
+ENV/
 .env
 .env.local
 
@@ -22,8 +22,10 @@ env/
 *.swp
 *.swo
 
-# Blaxel
+# Blaxel Docs & Internal Specs
 .blaxel/
+blaxel_api_docs/
+blaxel_sdk_docs/
 
 # OS
 .DS_Store
@@ -36,10 +38,11 @@ checkpoints/
 *.log
 sandbox_outputs/
 
-# Benchmarks
-benchmarks/kaggle/
+# Benchmarks & Scripts
+benchmarks/
+scripts/
+example_*.py
 *.csv
-!tests/fixtures/*.csv
 
 # Internal Planning & Development
 .gemini/
@@ -49,8 +52,10 @@ task.md
 walkthrough.md
 BENCHMARK.md
 PATENT_NOVELTY.md
+PROBLEMS.md
 
-# Test
+# Tests
+tests/
 .pytest_cache/
 htmlcov/
 .coverage

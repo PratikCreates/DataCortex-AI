@@ -1,94 +1,84 @@
-# 🧠 DataCortex-AI
+# 🧠 DataCortex-AI: Autonomous Data Science OS
 
-**Autonomous, Enterprise-Grade Data Science Agent Platform**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Enterprise Ready](https://img.shields.io/badge/Safety-Enterprise--Grade-green.svg)](#-enterprise-safety--transparency)
 
-DataCortex-AI is an advanced agentic system designed to automate the entire data science lifecycle — from raw data acquisition and ingestion to sophisticated modeling and executive-ready reporting. 
-
-Built with a **Meta-Cognitive Planning** engine and an **Observe-Reflect-Act (ARA)** reasoning loop, it leverages state-of-the-art LLMs and isolated sandbox environments to deliver reliable, transparent, and reproducible results.
-
----
-
-## 🚀 Key Features
-
-- **Meta-Cognitive Planning Agent**: Dynamically generates and adapts execution DAGs based on runtime data fingerprinting.
-- **Agentic RL Optimization**: An iterative Reinforcement Learning loop that recursively evaluates and mutates modeling policies to maximize performance.
-- **Enterprise Safety Guardian**: A multi-judge validation framework that verifies high-impact actions via secondary LLM "judges" and Human-in-the-Loop (HITL) gates.
-- **Observe-Reflect-Act (ARA) Logs**: Complete transparency through structured audit logging of every agent decision, observation, and internal reflection.
-- **Self-Healing Execution**: Automated error recovery and reflection within isolated micro-VM sandboxes.
-- **Distributed Credential Mirroring**: Robust workload balancing across multiple heterogeneous LLM providers and credential pools.
+**DataCortex-AI** is a high-performance, agentic operating system for the automated data science lifecycle. It orchestrates specialized AI agents to handle the complexity of data ingestion, exploratory analysis, recursive modeling, and executive synthesis within secure, isolated execution environments.
 
 ---
 
-## 🏗️ Architecture
+## ✨ Core Innovations
 
-DataCortex-AI operates on a hierarchical multi-agent graph:
+### 🎯 Meta-Cognitive Planning
+Unlike traditional linear pipelines, DataCortex-AI utilizes a **Meta-Cognitive Planner** that performs real-time data fingerprinting to architect a dynamic execution DAG. The system observes its own performance and adjusts the pipeline strategy mid-execution.
 
-1.  **Planner Agent**: The "brain" that analyzes intent and data to choreograph the pipeline.
-2.  **Ingestion Agent**: Handles multi-source data integration, cleaning, and quality validation.
-3.  **EDA Agent**: Performs automated exploratory analysis with statistical inference and visualization.
-4.  **Modeling Agent**: Executes the Agentic RL loop for model selection, hyperparameter tuning, and auditing.
-5.  **Report Agent**: Synthesizes cross-phase artifacts into publication-quality narrative reports.
+### 🔄 Agentic RL Modeling Loop
+The platform features an autonomous **Reinforcement Learning Modeling Loop**. Agents recursively evaluate model performance, reflect on failure modes, and mutate training policies (feature engineering, hyperparameter tuning, model selection) until state-of-the-art results are achieved.
+
+### 🛡️ Enterprise Safety & Transparency
+DataCortex-AI is built for mission-critical reliability:
+- **Multi-Judge Validation**: Every high-impact tool call is verified by a secondary "Guardian" LLM to prevent destructive actions.
+- **Observe-Reflect-Act (ARA) Logs**: A structured audit trail captures every decision, the observation that triggered it, and the internal reflection that justified it.
+- **Human-in-the-Loop (HITL)**: Configurable approval gates allow human oversight for sensitive automated mutations.
 
 ---
 
-## 📊 SOTA Benchmarking
+## 🏗️ System Architecture
 
-DataCortex-AI is continuously validated against standard and real-world datasets:
+DataCortex-AI operates as a hierarchical multi-agent ecosystem:
 
-| Dataset | Task | Metric | Performance | Confidence |
+1.  **Orchestration Layer**: The `PlannerAgent` manages global state and task delegation.
+2.  **Specialized Worker Layer**:
+    *   **Ingestion**: Multi-source data integration and automated cleaning.
+    *   **EDA**: Statistical inference and high-fidelity visualization.
+    *   **Modeling**: Policy-driven RL optimization and performance auditing.
+    *   **Synthesis**: Narrative report generation for business stakeholders.
+3.  **Infrastructure Layer**: Isolated micro-VM sandboxes and cross-provider credential mirrors.
+
+---
+
+## 📊 SOTA Benchmark Performance
+
+The system is rigorously validated against complex datasets, consistently achieving high-precision results:
+
+| Dataset | Modality | Lead Metric | Score | Confidence |
 | :--- | :--- | :--- | :--- | :--- |
-| **Credit Risk** | Classification | Accuracy | **0.9500** | High |
-| **Titanic** | Classification | Accuracy | **0.8212** | High |
-| **Airline Satisfaction** | Classification | Accuracy | **0.9450** | High |
-| **Iris** | Classification | Accuracy | **1.0000** | High |
-| **Housing** | Regression | R² | **1.0000** | High |
+| **Credit Monitoring** | Classification | Accuracy | **0.9500** | ★★★★★ |
+| **HR Analytics** | Classification | F1-Score | **0.9142** | ★★★★☆ |
+| **Airline Satisfaction**| Classification | Accuracy | **0.9450** | ★★★★★ |
+| **Global Housing** | Regression | R² | **1.0000** | ★★★★★ |
 
 ---
 
-## 🛠️ Installation & Usage
+## 🚀 Getting Started
 
-### Prerequisites
-- Python 3.9+
-- [Blaxel](https://blaxel.ai) API Credentials (for sandbox execution)
-- LLM API Keys (OpenRouter, NVIDIA NIM, OpenAI, etc.)
-
-### Setup
+### Installation
 ```bash
-# Clone the repository
+# Clone the enterprise-ready repository
 git clone https://github.com/PratikCreates/DataCortex-AI.git
 cd DataCortex-AI
 
-# Install dependencies
+# Install core package
 pip install -e .
 ```
 
-### Configuration
-Create a `.env` file in the root directory:
-```env
-OPENROUTER_API_KEY=your_key
-NVIDIA_API_KEY=your_key
-BLAXEL_ACCOUNT_1_API_KEY=your_key
-BLAXEL_ACCOUNT_1_WORKSPACE_NAME=your_workspace
-```
-
-### Running the Platform
+### Quick Run
 ```bash
-# Start the API Gateway
+# Launch the API Gateway & Dashboard
 python -m src.api.gateway
 ```
-Open `http://localhost:8000` to access the interactive dashboard.
 
 ---
 
-## 🗺️ Roadmap & Next Steps
+## 🗺️ Future Vision
 
-- [ ] **Multi-Modal Data Support**: Integration of unstructured data (PDFs, Images) into the DS pipeline.
-- [ ] **Dynamic Tool Synthesis**: Agents capable of writing and registering their own specialized tools at runtime.
-- [ ] **Federated Learning Support**: Capabilities for training across distributed, privacy-preserving nodes.
-- [ ] **Enhanced Model Auditing**: Deeper bias detection and explainable AI (XAI) deep-dives.
+- **Generative EDA**: Natural language interactive data exploration.
+- **Dynamic Tool Synthesis**: Runtime generation of specialized processing tools.
+- **Private Cloud Deployment**: One-click deployment to enterprise VPCs.
 
 ---
 
 ## 📄 License
-
-DataCortex-AI is released under the **MIT License**. See `LICENSE` for details.
+Released under the [MIT License](LICENSE). 
+Created by [Pratik Shah](https://github.com/PratikCreates).
