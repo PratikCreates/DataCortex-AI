@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Blaxel
+.blaxel/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Artifacts & Persistent State
+artifacts/
+checkpoints/
+*.tmp
+*.log
+sandbox_outputs/
+
+# Benchmarks
+benchmarks/kaggle/
+*.csv
+!tests/fixtures/*.csv
+
+# Internal Planning & Development
+.gemini/
+brain/
+implementation_plan.md
+task.md
+walkthrough.md
+BENCHMARK.md
+PATENT_NOVELTY.md
+
+# Test
+.pytest_cache/
+htmlcov/
+.coverage

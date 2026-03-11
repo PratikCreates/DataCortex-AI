@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DatacortexAI — Enterprise Data Science Platform</title>
+    <meta name="description" content="Unified AI-orchestrated platform for automated data ingestion, analysis, modeling, and reporting.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app-shell">
+
+        <!-- ─── Header ─── -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>DatacortexAI</h1>
+                    <p>Enterprise Data Science Platform</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <div class="status-dot"></div>
+                <span id="header-status-text">System Ready</span>
+            </div>
+        </header>
+
+        <!-- ─── Upload Zone ─── -->
+        <div class="upload-zone" id="upload-zone">
+            <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <h2 class="upload-title">Select or drop dataset</h2>
+            <p class="upload-subtitle">Supported formats: CSV, JSON, Excel, Parquet</p>
+            <input type="file" id="file-input" accept=".csv,.json,.xlsx,.xls,.parquet,.tsv,.tab" hidden>
+        </div>
+
+        <!-- ─── Config Panel ─── -->
+        <div class="config-panel" id="config-panel">
+            <div class="file-info" id="file-info">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span class="file-info-name" id="file-name">—</span>
+                <span class="file-info-size" id="file-size">—</span>
+            </div>
+            <div class="config-header">
+                <h3>Analysis Configuration</h3>
+            </div>
+            <div class="config-fields">
+                <div class="field-group">
+                    <label for="target-col">Target Column (Optional)</label>
+                    <input type="text" id="target-col" placeholder="e.g., SalePrice, IsChurned">
+                </div>
+                <div class="field-group">
+                    <label>&nbsp;</label>
+                    <p class="field-help">DatacortexAI will auto-detect if left blank.</p>
+                </div>
+                <div class="field-group full-width">
+                    <label for="user-query">Analysis Objective (Optional)</label>
+                    <textarea id="user-query" placeholder="Describe specific analytical goals or leave blank for comprehensive automated profiling."></textarea>
+                </div>
+            </div>
+            <button class="btn-analyze" id="btn-analyze">
+                Execute Pipeline
+            </button>
+        </div>
+
+        <!-- ─── Pipeline Visualization ─── -->
+        <div class="pipeline-section" id="pipeline-section">
+            <div class="pipeline-header">
+                <h2>Execution Pipeline</h2>
+                <span class="pipeline-progress" id="pipeline-progress">0%</span>
+            </div>
+            <div class="pipeline-dag" id="pipeline-dag">
+                <div class="dag-node pending" id="dag-ingestion">
+                    <div class="dag-icon">1</div>
+                    <span class="dag-label">Ingest</span>
+                </div>
+                <div class="dag-connector" id="conn-1"></div>
+                <div class="dag-node pending" id="dag-profiling">
+                    <div class="dag-icon">2</div>
+                    <span class="dag-label">Profile</span>
+                </div>
+                <div class="dag-connector" id="conn-2"></div>
+                <div class="dag-node pending" id="dag-eda">
+                    <div class="dag-icon">3</div>
+                    <span class="dag-label">Analyze</span>
+                </div>
+                <div class="dag-connector" id="conn-3"></div>
+                <div class="dag-node pending" id="dag-modeling">
+                    <div class="dag-icon">4</div>
+                    <span class="dag-label">Train</span>
+                </div>
+                <div class="dag-connector" id="conn-4"></div>
+                <div class="dag-node pending" id="dag-reporting">
+                    <div class="dag-icon">5</div>
+                    <span class="dag-label">Synthesize</span>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-grid" id="summary-grid" style="margin-top: 24px;"></div>
+        </div>
+
+        <!-- ─── Live Log Stream ─── -->
+        <div class="log-section" id="log-section">
+            <div class="log-container">
+                <div class="log-header">
+                    <h3>Execution Logs</h3>
+                    <span id="log-count" class="log-count-text">0 events</span>
+                </div>
+                <div class="log-body" id="log-body"></div>
+            </div>
+        </div>
+
+        <!-- ─── Report Section ─── -->
+        <div class="report-section" id="report-section">
+            <div class="report-card">
+                <div class="report-header">
+                    <h2>Analytical Report</h2>
+                    <button class="btn-download" id="btn-download">Export Markdown</button>
+                </div>
+                <div class="report-body" id="report-body"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
