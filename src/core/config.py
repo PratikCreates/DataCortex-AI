@@ -126,38 +126,33 @@ class InferenceConfig:
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
 
-    # ── NVIDIA NIM Frontier Model Assignments (April 2026 SOTA) ────────────
-    # Each model is chosen for its specific strength in the pipeline.
-    # All use the same NVIDIA API key and base URL.
-    #
-    # PLANNING — GLM-5 (744B MoE)
-    #   Designed for complex systems engineering and long-horizon tasks. 
-    #   Excels in long-context scenarios (205K tokens).
-    planning_model: str = "z-ai/glm-5"
-    #
-    # CODE GENERATION — Qwen3-Coder-480B-A35B
-    #   The current open-weight SOTA for agentic coding. 
-    #   Excels in browser use and 256K context support.
-    code_gen_model: str = "qwen/qwen3-coder-480b-a35b-instruct"
-    #
+    # ── NVIDIA NIM Frontier Model Assignments (Mid-April 2026 SOTA) ────────
+    
+    # PLANNING — Kimi K2 Thinking (Moonshot AI)
+    #   Open reasoning model with 256K context window. 
+    #   Replaces GLM-5 (deprecated). Best for multistep agentic planning.
+    planning_model: str = "moonshotai/kimi-k2-thinking"
+    
+    # CODE GENERATION — DeepSeek-V3.2
+    #   685B thinking model. SOTA reasoning + agentic coding.
+    #   (Alternate: qwen/qwen3-coder-480b-a35b-instruct)
+    code_gen_model: str = "deepseek-ai/deepseek-v3.2"
+    
     # ANALYSIS — Gemma 4 31B IT
     #   Latest Google Frontier model (Released April 2, 2026).
-    #   Optimized for reasoning and agentic workflows.
+    #   Optimized for frontier reasoning and agentic workflows.
     analysis_model: str = "google/gemma-4-31b-it"
-    #
+    
     # NARRATION — Llama 3.3 70B Instruct
-    #   Strong instruction-following + fluent prose output.
-    #   Used for executive summaries and recommendations in reports.
+    #   Stable veteran for consistent report styling and Markdown.
     narration_model: str = "meta/llama-3.3-70b-instruct"
-    #
+    
     # GUARDIAN — Llama Guard 4 12B
-    #   Latest Llama 4 safety architecture for industrial-grade safety labels.
-    #   Provides precise guardrails for agentic tool use (Patent Claim 3).
+    #   Latest safety guardrail architecture from Meta.
     guardian_model: str = "meta/llama-guard-4-12b"
-    #
+    
     # FALLBACK — Phi-4 Mini
-    #   Released late March/April 2026. SOTA weight-to-performance ratio.
-    #   Lightweight always-available fallback if larger models time out.
+    #   SOTA Small Language Model (SLM). Highest weight-to-perf ratio.
     fallback_model: str = "microsoft/phi-4-mini-instruct"
 
     _key_index: int = 0

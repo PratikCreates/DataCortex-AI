@@ -40,8 +40,8 @@ class LLMClient:
     OpenRouter is kept as a last-resort fallback (NVIDIA fully down).
 
     Model assignments (Patent Claim 3 — Multi-Judge Independence):
-      Planning  → GLM-5 (744B MoE)    (Long-horizon agentic task specialist)
-      Code Gen  → Qwen3-Coder-480B    (Specialized coding SOTA)
+      Planning  → Kimi-K2-Thinking    (256K context reasoning SOTA)
+      Code Gen  → DeepSeek-V3.2       (685B thinking coder)
       Analysis  → Gemma 4 31B IT      (Latest Google reasoning model)
       Narration → Llama 3.3 70B       (Reliable instruction following)
       Guardian  → Llama Guard 4 12B   (Next-gen safety architecture)
@@ -87,8 +87,8 @@ class LLMClient:
     # ─── Public API ───────────────────────────────────
 
     async def plan(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use the planning model (GLM-5) for DAG construction and reasoning.
-        Ideal for long-horizon agentic task decomposition.
+        """Use the planning model (Kimi-K2-Thinking) for DAG construction.
+        Native high-depth reasoning for complex agentic plans.
         """
         return await self._call_with_fallback(
             primary_provider="nvidia",
@@ -100,8 +100,8 @@ class LLMClient:
         )
 
     async def generate_code(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use Qwen3-Coder-480B for code generation. 
-        Agentic-ready coding SOTA with huge parameter count for complex logic.
+        """Use DeepSeek-V3.2 for code generation. 
+        Agentic-ready 685B SOTA with thinking mode enabled.
         """
         return await self._call_with_fallback(
             primary_provider="nvidia",
@@ -159,7 +159,7 @@ class LLMClient:
         Multi-Judge Guardian: Validates a proposed action via a secondary LLM.
 
         Uses the guardian_model (Llama Guard 4 12B) — a DIFFERENT model family
-        from the planning_model (GLM-5) to ensure genuine multi-judge
+        from the planning_model (Kimi-K2) to ensure genuine multi-judge
         independence (Patent Claim 3).
 
         Returns True if the action is deemed safe and logically consistent.
@@ -213,7 +213,9 @@ Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
     ) -> LLMResponse:
         """Try primary provider, fall back to alternate on failure.
         On OpenRouter 429, rotate to next key before retrying."""
-        fallback_chain = self._build_fallback_chain(primary_provider, primary_model)
+        # Allow overriding the model via kwargs
+        model = kwargs.pop("model", primary_model)
+        fallback_chain = self._build_fallback_chain(primary_provider, model)
         n_or_keys = len(self.config.inference.openrouter_api_keys)
 
         last_error = None
@@ -294,8 +296,16 @@ Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
 
         choice = completion.choices[0]
         content = choice.message.content or ""
+        
+        # Try to extract reasoning content (OAI, DeepSeek, or vendor-specific)
         reasoning = getattr(choice.message, "reasoning_content", None)
+        if not reasoning and hasattr(choice.message, "reasoning"):
+            reasoning = choice.message.reasoning
+        
         tool_calls = getattr(choice.message, "tool_calls", None)
+
+        if not content and not tool_calls:
+            logger.warning(f"Model {model} returned empty content and no tool calls.")
 
         return LLMResponse(
             content=content,
@@ -315,10 +325,11 @@ Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
         """Build ordered list of (provider, model) pairs to try.
 
         Fallback order:
-          1. Primary NVIDIA model (e.g. GLM-5 / Qwen3-Coder)
-          2. Gemma 4 31B (Second-most powerful Frontier on NIM)
-          3. Phi-4 Mini (SOTA SLM fallback)
-          4. OpenRouter (Last resort)
+          1. Primary NVIDIA model (e.g. Kimi-K2 / DeepSeek-V3.2)
+          2. Gemma 4 31B (NVIDIA Frontier fallback)
+          3. Llama 3.3 70B (Reliability fallback)
+          4. Phi-4 Mini (SOTA SLM fallback)
+          5. OpenRouter (Last resort)
         """
         inf = self.config.inference
         chain = [(primary_provider, primary_model)]
@@ -326,6 +337,8 @@ Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
         if primary_provider == "nvidia":
             if primary_model != inf.analysis_model:
                 chain.append(("nvidia", inf.analysis_model))      # Gemma 4 31B
+            if primary_model != inf.narration_model:
+                chain.append(("nvidia", inf.narration_model))     # Llama 3.3 70B
             if primary_model != inf.fallback_model:
                 chain.append(("nvidia", inf.fallback_model))      # Phi-4 Mini
             chain.append(("openrouter", inf.analysis_model))      # Last resort
