@@ -614,34 +614,71 @@ print(json.dumps(results, default=str))
     def _build_local_models(self, model_names, task, fingerprint):
         """Instantiate sklearn model objects for local training."""
         from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge, Lasso
-        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-        from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
+        from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
+        from sklearn.neural_network import MLPClassifier, MLPRegressor
         from sklearn.svm import SVC, SVR
         from sklearn.neighbors import KNeighborsClassifier
 
         n_rows = fingerprint.n_rows if fingerprint else 100
         balance = fingerprint.class_balance if fingerprint else 1.0
         cw = "balanced" if balance < 0.8 and task == "classification" else None
-        n_est = min(100, max(50, n_rows // 10))
+        n_est = min(300, max(100, n_rows // 5)) # Increased estimators for SOTA
+        
+        # Determine SOTA tree params
+        min_samples = max(2, min(20, n_rows // 100))
+        learning_rate = 0.05
 
         model_map = {
-            "LogisticRegression": ("LogisticRegression", LogisticRegression(max_iter=1000, class_weight=cw)),
-            "RandomForestClassifier": ("RandomForest", RandomForestClassifier(n_estimators=n_est, class_weight=cw, random_state=42)),
-            "GradientBoostingClassifier": ("GradientBoosting", GradientBoostingClassifier(n_estimators=n_est, learning_rate=0.1, random_state=42)),
+            "LogisticRegression": ("LogisticRegression", LogisticRegression(max_iter=2000, class_weight=cw)),
+            "RandomForestClassifier": ("RandomForest", RandomForestClassifier(n_estimators=n_est, min_samples_leaf=min_samples, class_weight=cw, n_jobs=-1, random_state=42)),
+            "GradientBoostingClassifier": ("GradientBoosting", GradientBoostingClassifier(n_estimators=n_est, learning_rate=learning_rate, max_depth=5, random_state=42)),
+            "HistGradientBoostingClassifier": ("HistGradientBoosting", HistGradientBoostingClassifier(learning_rate=learning_rate, max_iter=n_est, max_depth=7, class_weight=cw, random_state=42)),
+            "MLPClassifier": ("MLP_NeuralNet", MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=1000, early_stopping=True, random_state=42)),
             "SVC": ("SVM", SVC(class_weight=cw, probability=True, random_state=42)),
-            "KNeighborsClassifier": ("KNN", KNeighborsClassifier(n_neighbors=min(15, max(3, int(n_rows ** 0.5 / 5))))),
+            "KNeighborsClassifier": ("KNN", KNeighborsClassifier(n_neighbors=min(15, max(3, int(n_rows ** 0.5 / 5))), weights='distance')),
+            
             "LinearRegression": ("LinearRegression", LinearRegression()),
             "Ridge": ("Ridge", Ridge(alpha=1.0)),
             "Lasso": ("Lasso", Lasso(alpha=0.1)),
-            "RandomForestRegressor": ("RandomForest", RandomForestRegressor(n_estimators=n_est, random_state=42)),
-            "GradientBoostingRegressor": ("GradientBoosting", GradientBoostingRegressor(n_estimators=n_est, learning_rate=0.1, random_state=42)),
+            "RandomForestRegressor": ("RandomForest", RandomForestRegressor(n_estimators=n_est, min_samples_leaf=min_samples, n_jobs=-1, random_state=42)),
+            "GradientBoostingRegressor": ("GradientBoosting", GradientBoostingRegressor(n_estimators=n_est, learning_rate=learning_rate, max_depth=5, random_state=42)),
+            "HistGradientBoostingRegressor": ("HistGradientBoosting", HistGradientBoostingRegressor(learning_rate=learning_rate, max_iter=n_est, max_depth=7, random_state=42)),
+            "MLPRegressor": ("MLP_NeuralNet", MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, early_stopping=True, random_state=42)),
             "SVR": ("SVR", SVR()),
         }
 
+        # Dynamically add XGBoost and LightGBM if they are installed in the environment
+        try:
+            from xgboost import XGBClassifier, XGBRegressor
+            xgb_cw = sum(y_train==0)/sum(y_train==1) if cw and 'y_train' in locals() else 1
+            model_map["XGBClassifier"] = ("XGBoost", XGBClassifier(n_estimators=n_est, learning_rate=learning_rate, scale_pos_weight=xgb_cw, use_label_encoder=False, eval_metric="logloss", random_state=42))
+            model_map["XGBRegressor"] = ("XGBoost", XGBRegressor(n_estimators=n_est, learning_rate=learning_rate, random_state=42))
+        except ImportError:
+            pass
+            
+        try:
+            from lightgbm import LGBMClassifier, LGBMRegressor
+            model_map["LGBMClassifier"] = ("LightGBM", LGBMClassifier(n_estimators=n_est, learning_rate=learning_rate, class_weight=cw, random_state=42, verbose=-1))
+            model_map["LGBMRegressor"] = ("LightGBM", LGBMRegressor(n_estimators=n_est, learning_rate=learning_rate, random_state=42, verbose=-1))
+        except ImportError:
+            pass
+
         instances = []
+        # If the LLM requested an unknown model, fall back to HistGradientBoosting which usually dominates
+        best_default = "HistGradientBoostingClassifier" if task == "classification" else "HistGradientBoostingRegressor"
+        
         for name in model_names:
             if name in model_map:
                 instances.append(model_map[name])
+            elif not any(i[0] == model_map[best_default][0] for i in instances):
+                # Fallback mapping to ensure a strong tree model is always included if requested model fails
+                instances.append(model_map[best_default])
+                
+        # If no models resolved, force standard SOTA defaults
+        if not instances:
+            instances.append(model_map[best_default])
+            
         return instances
 
     def _log_audit(
