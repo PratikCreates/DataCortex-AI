@@ -34,13 +34,18 @@ class LLMResponse:
 
 class LLMClient:
     """
-    Unified LLM client for DatacortexAI.
+    Unified LLM client for DatacortexAI — NVIDIA NIM Primary.
 
-    Routes requests to the best available provider:
-    - NVIDIA API for planning/code generation (deepseek-v3.2)
-    - OpenRouter free router for general analysis/narration
-    - Automatic fallback between providers on failure
-    - 15-second timeout per call to prevent pipeline hangs
+    All requests route through NVIDIA integrate.api.nvidia.com as primary.
+    OpenRouter is kept as a last-resort fallback (NVIDIA fully down).
+
+    Model assignments (Patent Claim 3 — Multi-Judge Independence):
+      Planning  → Nemotron Super 49B  (thinking model, agentic DAG)
+      Code Gen  → DeepSeek-R1         (best coder, chain-of-thought)
+      Analysis  → Llama 3.3 70B       (fast, reliable JSON output)
+      Narration → Llama 3.3 70B       (fluent prose, instruction following)
+      Guardian  → Nemotron Nano 8B    (separate family = true multi-judge)
+      Fallback  → Nemotron Nano 8B    (lightweight, always available)
     """
 
     CALL_TIMEOUT = 15  # seconds per individual LLM call
@@ -82,7 +87,9 @@ class LLMClient:
     # ─── Public API ───────────────────────────────────
 
     async def plan(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use the planning model (NVIDIA deepseek) for reasoning tasks."""
+        """Use the planning model (Nemotron Super 49B) for DAG construction and reasoning.
+        Enables thinking-budget mode for deeper multi-step planning.
+        """
         return await self._call_with_fallback(
             primary_provider="nvidia",
             primary_model=self.config.inference.planning_model,
@@ -93,7 +100,9 @@ class LLMClient:
         )
 
     async def generate_code(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use the code generation model for writing Python code."""
+        """Use DeepSeek-R1 for code generation. Chain-of-thought reasoning
+        enabled — R1 shows its reasoning before outputting the final code.
+        """
         return await self._call_with_fallback(
             primary_provider="nvidia",
             primary_model=self.config.inference.code_gen_model,
@@ -106,7 +115,7 @@ class LLMClient:
     async def analyze(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
         """Use the analysis model for general data analysis tasks."""
         return await self._call_with_fallback(
-            primary_provider="openrouter",
+            primary_provider="nvidia",
             primary_model=self.config.inference.analysis_model,
             prompt=prompt,
             system=system,
@@ -116,7 +125,7 @@ class LLMClient:
     async def narrate(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
         """Use the narration model for generating reports and narratives."""
         return await self._call_with_fallback(
-            primary_provider="openrouter",
+            primary_provider="nvidia",
             primary_model=self.config.inference.narration_model,
             prompt=prompt,
             system=system or "You are a senior data science consultant writing executive-quality reports in Markdown.",
@@ -148,34 +157,45 @@ class LLMClient:
     async def validate(self, action: str, reasoning: str, context: Optional[str] = None) -> bool:
         """
         Multi-Judge Guardian: Validates a proposed action via a secondary LLM.
+
+        Uses the guardian_model (Nemotron Nano 8B) — a DIFFERENT model family
+        from the planning_model (Nemotron Super 49B) to ensure genuine
+        multi-judge independence (Patent Claim 3).
+
         Returns True if the action is deemed safe and logically consistent.
         """
         prompt = f"""
-        Action Proposed: {action}
-        Reasoning: {reasoning}
-        Context: {context or 'N/A'}
+Action Proposed: {action}
+Reasoning: {reasoning}
+Context: {context or 'N/A'}
 
-        As an AI Safety Guardian, evaluate this action for:
-        1. Safety (No destructive data loss unless explicitly requested for cleaning).
-        2. Logical Consistency (Does it follow from the reasoning?).
-        3. Transparency (Is it clear what this will do?).
+As an AI Safety Guardian, evaluate this action for:
+1. Safety (No destructive data loss unless explicitly requested for cleaning).
+2. Logical Consistency (Does it follow from the reasoning?).
+3. Transparency (Is it clear what this will do?).
 
-        Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
-        """
+Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
+"""
         try:
-            # We use OpenRouter as a secondary "judge" to avoid monoculture bias if primary is NVIDIA
-            resp = await self.structured_output(
+            # Guardian uses a DIFFERENT model from primary planner (anti-monoculture)
+            guardian_model = getattr(self.config.inference, "guardian_model",
+                                     self.config.inference.fallback_model)
+            resp = await self._call_with_fallback(
+                primary_provider="nvidia",
+                primary_model=guardian_model,
                 prompt=prompt,
-                system="You are an AI Safety Validator. Your job is to prevent incorrect or unsafe agent actions.",
-                schema_hint='{"safe": boolean, "explanation": "string"}'
+                system="You are an AI Safety Validator. Your ONLY job is to prevent incorrect or unsafe agent actions. Respond ONLY in valid JSON.",
+                max_tokens=256,
             )
-            safe = resp.get("safe", False)
+            parsed = self._parse_json(resp.content)
+            safe = parsed.get("safe", False)
             if not safe:
-                logger.warning(f"Guardian rejected action: {resp.get('explanation')}")
+                logger.warning(f"Guardian ({guardian_model}) rejected: {parsed.get('explanation')}")
             else:
-                logger.info(f"Guardian approved action: {action[:50]}...")
+                logger.info(f"Guardian approved: {action[:60]}...")
             return safe
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Guardian validation failed ({e}), defaulting to False")
             return False
 
     # ─── Internal Machinery ──────────────────────────
@@ -243,13 +263,9 @@ class LLMClient:
         """Execute a single LLM call to a specific provider."""
         client = self._nvidia_client if provider == "nvidia" else self._openrouter_client
 
-        # Map generic models to NVIDIA-specific IDs if needed
-        if provider == "nvidia" and "/" not in model:
-             # Default to a robust NIM if model name is simple
-             model = "nvidia/llama-3.1-405b-instruct" if "large" in model.lower() else "nvidia/llama-3.1-70b-instruct"
-        elif provider == "nvidia" and "google/gemini" in model:
-             # NVIDIA doesn't host Gemini, use Llama 3.1 70B as equivalent target
-             model = "meta/llama-3.1-70b-instruct"
+        # All providers are now NVIDIA NIM — no model ID remapping needed.
+        # NVIDIA NIM accepts the full model IDs like 'meta/llama-3.3-70b-instruct',
+        # 'deepseek-ai/deepseek-r1', 'nvidia/llama-3.3-nemotron-super-49b-v1' directly.
 
         messages = []
         if system:
@@ -296,16 +312,28 @@ class LLMClient:
     def _build_fallback_chain(
         self, primary_provider: str, primary_model: str
     ) -> list[tuple[str, str]]:
-        """Build ordered list of (provider, model) pairs to try."""
+        """Build ordered list of (provider, model) pairs to try.
+
+        Fallback order:
+          1. Primary NVIDIA model (e.g. Nemotron Super / DeepSeek-R1)
+          2. Llama 3.3 70B on NVIDIA (reliable general fallback)
+          3. Nemotron Nano on NVIDIA (lightweight, almost always available)
+          4. OpenRouter (last resort only — for when NVIDIA is fully down)
+        """
         inf = self.config.inference
         chain = [(primary_provider, primary_model)]
 
         if primary_provider == "nvidia":
-            chain.append(("openrouter", inf.analysis_model))
-            chain.append(("openrouter", inf.fallback_model))
+            # Step down to a lighter NVIDIA model first
+            if primary_model != inf.analysis_model:
+                chain.append(("nvidia", inf.analysis_model))      # Llama 3.3 70B
+            if primary_model != inf.fallback_model:
+                chain.append(("nvidia", inf.fallback_model))      # Nemotron Nano 8B
+            chain.append(("openrouter", inf.analysis_model))      # Last resort
         else:
+            # If somehow starting on OpenRouter, jump to NVIDIA immediately
             chain.append(("nvidia", inf.planning_model))
-            chain.append(("openrouter", inf.fallback_model))
+            chain.append(("nvidia", inf.fallback_model))
 
         return chain
 

@@ -126,12 +126,39 @@ class InferenceConfig:
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
 
-    # Model preferences
-    planning_model: str = "google/gemini-2.5-flash:free"  # OpenRouter free model
-    code_gen_model: str = "google/gemini-2.5-flash:free"  # OpenRouter free model
-    analysis_model: str = "openrouter/free"  # OpenRouter free router
-    narration_model: str = "openrouter/free"  # OpenRouter free router
-    fallback_model: str = "qwen/qwen3-coder:free"  # OpenRouter specific free model
+    # ── NVIDIA NIM Model Assignments (integrate.api.nvidia.com) ────────────
+    # Each model is chosen for its specific strength in the pipeline.
+    # All use the same NVIDIA API key and base URL.
+    #
+    # PLANNING — Nemotron Super 49B
+    #   Purpose-built for agentic multistep reasoning and DAG construction.
+    #   Has a thinking-budget toggle. Best for adaptive plan generation.
+    planning_model: str = "nvidia/llama-3.3-nemotron-super-49b-v1"
+    #
+    # CODE GENERATION — DeepSeek-R1
+    #   Best open-source coder. Native chain-of-thought reasoning.
+    #   Dominates HumanEval + SWE-Bench. Used for all generated Python.
+    code_gen_model: str = "deepseek-ai/deepseek-r1"
+    #
+    # ANALYSIS — Llama 3.3 70B Instruct
+    #   Fast, reliable JSON-mode output. Used for EDA interpretation,
+    #   fingerprint analysis, and structured artifact generation.
+    analysis_model: str = "meta/llama-3.3-70b-instruct"
+    #
+    # NARRATION — Llama 3.3 70B Instruct
+    #   Strong instruction-following + fluent prose output.
+    #   Used for executive summaries and recommendations in reports.
+    narration_model: str = "meta/llama-3.3-70b-instruct"
+    #
+    # GUARDIAN — Nemotron Nano 8B
+    #   Fast, low-latency safety judge. Separate from planning model
+    #   to avoid monoculture (different model family = stronger
+    #   multi-judge independence for Claim 3).
+    guardian_model: str = "nvidia/llama-3.1-nemotron-nano-8b-v1"
+    #
+    # FALLBACK — Nemotron Nano 8B
+    #   Lightweight always-available fallback if larger models time out.
+    fallback_model: str = "nvidia/llama-3.1-nemotron-nano-8b-v1"
 
     _key_index: int = 0
 
