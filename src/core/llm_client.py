@@ -40,12 +40,12 @@ class LLMClient:
     OpenRouter is kept as a last-resort fallback (NVIDIA fully down).
 
     Model assignments (Patent Claim 3 — Multi-Judge Independence):
-      Planning  → Nemotron Super 49B  (thinking model, agentic DAG)
-      Code Gen  → DeepSeek-R1         (best coder, chain-of-thought)
-      Analysis  → Llama 3.3 70B       (fast, reliable JSON output)
-      Narration → Llama 3.3 70B       (fluent prose, instruction following)
-      Guardian  → Nemotron Nano 8B    (separate family = true multi-judge)
-      Fallback  → Nemotron Nano 8B    (lightweight, always available)
+      Planning  → GLM-5 (744B MoE)    (Long-horizon agentic task specialist)
+      Code Gen  → Qwen3-Coder-480B    (Specialized coding SOTA)
+      Analysis  → Gemma 4 31B IT      (Latest Google reasoning model)
+      Narration → Llama 3.3 70B       (Reliable instruction following)
+      Guardian  → Llama Guard 4 12B   (Next-gen safety architecture)
+      Fallback  → Phi-4 Mini          (SOTA lightweight instruct)
     """
 
     CALL_TIMEOUT = 15  # seconds per individual LLM call
@@ -87,8 +87,8 @@ class LLMClient:
     # ─── Public API ───────────────────────────────────
 
     async def plan(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use the planning model (Nemotron Super 49B) for DAG construction and reasoning.
-        Enables thinking-budget mode for deeper multi-step planning.
+        """Use the planning model (GLM-5) for DAG construction and reasoning.
+        Ideal for long-horizon agentic task decomposition.
         """
         return await self._call_with_fallback(
             primary_provider="nvidia",
@@ -100,14 +100,14 @@ class LLMClient:
         )
 
     async def generate_code(self, prompt: str, system: str = "", **kwargs) -> LLMResponse:
-        """Use DeepSeek-R1 for code generation. Chain-of-thought reasoning
-        enabled — R1 shows its reasoning before outputting the final code.
+        """Use Qwen3-Coder-480B for code generation. 
+        Agentic-ready coding SOTA with huge parameter count for complex logic.
         """
         return await self._call_with_fallback(
             primary_provider="nvidia",
             primary_model=self.config.inference.code_gen_model,
             prompt=prompt,
-            system=system or "You are an expert Python data scientist. Output ONLY valid Python code, no markdown fences.",
+            system=system or "You are an expert Python data scientist. Output ONLY valid Python code.",
             enable_reasoning=True,
             **kwargs,
         )
@@ -158,9 +158,9 @@ class LLMClient:
         """
         Multi-Judge Guardian: Validates a proposed action via a secondary LLM.
 
-        Uses the guardian_model (Nemotron Nano 8B) — a DIFFERENT model family
-        from the planning_model (Nemotron Super 49B) to ensure genuine
-        multi-judge independence (Patent Claim 3).
+        Uses the guardian_model (Llama Guard 4 12B) — a DIFFERENT model family
+        from the planning_model (GLM-5) to ensure genuine multi-judge
+        independence (Patent Claim 3).
 
         Returns True if the action is deemed safe and logically consistent.
         """
@@ -315,23 +315,21 @@ Respond with a JSON object: {{"safe": true/false, "explanation": "..."}}
         """Build ordered list of (provider, model) pairs to try.
 
         Fallback order:
-          1. Primary NVIDIA model (e.g. Nemotron Super / DeepSeek-R1)
-          2. Llama 3.3 70B on NVIDIA (reliable general fallback)
-          3. Nemotron Nano on NVIDIA (lightweight, almost always available)
-          4. OpenRouter (last resort only — for when NVIDIA is fully down)
+          1. Primary NVIDIA model (e.g. GLM-5 / Qwen3-Coder)
+          2. Gemma 4 31B (Second-most powerful Frontier on NIM)
+          3. Phi-4 Mini (SOTA SLM fallback)
+          4. OpenRouter (Last resort)
         """
         inf = self.config.inference
         chain = [(primary_provider, primary_model)]
 
         if primary_provider == "nvidia":
-            # Step down to a lighter NVIDIA model first
             if primary_model != inf.analysis_model:
-                chain.append(("nvidia", inf.analysis_model))      # Llama 3.3 70B
+                chain.append(("nvidia", inf.analysis_model))      # Gemma 4 31B
             if primary_model != inf.fallback_model:
-                chain.append(("nvidia", inf.fallback_model))      # Nemotron Nano 8B
+                chain.append(("nvidia", inf.fallback_model))      # Phi-4 Mini
             chain.append(("openrouter", inf.analysis_model))      # Last resort
         else:
-            # If somehow starting on OpenRouter, jump to NVIDIA immediately
             chain.append(("nvidia", inf.planning_model))
             chain.append(("nvidia", inf.fallback_model))
 
