@@ -13,9 +13,8 @@ import time
 import json
 import logging
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Any
+from typing import Optional, Any, Callable
 from enum import Enum
-from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +48,15 @@ class ArtifactType(str, Enum):
     CLEANING_LOG = "cleaning_log"
 
 
-class ValidationResult(BaseModel):
+@dataclass
+class ValidationResult:
     """Result of an artifact validation."""
     is_valid: bool
-    errors: list[str] = []
+    errors: list = field(default_factory=list)
 
 
-class ArtifactSchema(BaseModel):
+@dataclass
+class ArtifactSchema:
     """Schema definition for an artifact type."""
     artifact_type: ArtifactType
     validator: Callable[[Any], bool]
