@@ -15,6 +15,7 @@ import logging
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Any
 from enum import Enum
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,39 @@ class ArtifactType(str, Enum):
     DATA_FINGERPRINT = "data_fingerprint"
     EXECUTION_LOG = "execution_log"
     CLEANING_LOG = "cleaning_log"
+
+
+class ValidationResult(BaseModel):
+    """Result of an artifact validation."""
+    is_valid: bool
+    errors: list[str] = []
+
+
+class ArtifactSchema(BaseModel):
+    """Schema definition for an artifact type."""
+    artifact_type: ArtifactType
+    validator: Callable[[Any], bool]
+    description: str = ""
+
+
+class ValidationEngine:
+    """Engine to validate artifacts against registered schemas."""
+    def __init__(self):
+        self.schemas: dict[str, ArtifactSchema] = {}
+
+    def register_schema(self, schema: ArtifactSchema):
+        self.schemas[schema.artifact_type.value] = schema
+
+    def validate(self, artifact_type: str, data: Any) -> ValidationResult:
+        if artifact_type not in self.schemas:
+            return ValidationResult(is_valid=True)
+        
+        schema = self.schemas[artifact_type]
+        is_valid = schema.validator(data)
+        return ValidationResult(
+            is_valid=is_valid,
+            errors=[] if is_valid else [f"Validation failed for {artifact_type}"]
+        )
 
 
 @dataclass
@@ -120,6 +154,7 @@ class ArtifactRegistry:
         artifact_type: ArtifactType | str,
         data: Any,
         metadata: Optional[dict] = None,
+        validate: bool = True,
     ) -> Artifact:
         """Register a new artifact from a lifecycle phase."""
         # Always extract .value from enums to avoid repr issues in Python 3.11+
@@ -129,6 +164,17 @@ class ArtifactRegistry:
         # CLAIM 2: Sanitize data for cross-phase propagation and serialization
         clean_data = self._clean_data(data)
         
+        if validate:
+            validation = self.validate_artifact(type_str, clean_data)
+            if not validation.is_valid:
+                logger.warning(f"Artifact validation failed for {type_str}: {validation.errors}")
+                if metadata is None: metadata = {}
+                metadata["validation_errors"] = validation.errors
+                metadata["is_valid"] = False
+            else:
+                if metadata is None: metadata = {}
+                metadata["is_valid"] = True
+
         artifact = Artifact(
             phase=phase_str,
             artifact_type=type_str,
@@ -138,6 +184,30 @@ class ArtifactRegistry:
         self._artifacts.append(artifact)
         logger.info(f"Registered artifact: {artifact.artifact_id}")
         return artifact
+
+    def validate_artifact(self, artifact_type: str, data: Any) -> ValidationResult:
+        """Validate artifact data against its schema."""
+        # Simple rule-based validation for now, can be expanded with Pydantic
+        errors = []
+        
+        if artifact_type == ArtifactType.SCHEMA:
+            if not isinstance(data, dict) or "columns" not in data:
+                errors.append("Schema artifact must be a dict with 'columns' key")
+        
+        elif artifact_type == ArtifactType.STATISTICS:
+            if not isinstance(data, dict):
+                errors.append("Statistics artifact must be a dictionary")
+        
+        elif artifact_type == ArtifactType.MODEL_METRICS:
+            if not isinstance(data, dict):
+                errors.append("Model metrics must be a dictionary")
+            else:
+                required = ["accuracy", "precision", "recall", "f1"]
+                # Only check if it's a model metrics type that expects these
+                # some models might have different metrics
+                pass
+
+        return ValidationResult(is_valid=len(errors) == 0, errors=errors)
 
     def _clean_data(self, data: Any) -> Any:
         """Recursively clean data for JSON serialization (replace NaN/Inf with None)."""

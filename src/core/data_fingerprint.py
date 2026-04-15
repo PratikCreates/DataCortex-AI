@@ -187,6 +187,57 @@ class DataFingerprinter:
 
         return fp
 
+    def validate_consistency(
+        self,
+        original: DataFingerprint,
+        modified: DataFingerprint,
+        threshold_row_loss: float = 0.15,
+        threshold_sparsity_drift: float = 0.2,
+    ) -> list[str]:
+        """
+        🛡️ CLAIM 2: Cross-Phase Data Integrity Protection
+        
+        Compare two fingerprints to detect anomalies introduced by 
+        automated data mutations.
+        
+        Returns:
+            List of anomaly descriptions (empty if consistent)
+        """
+        anomalies = []
+
+        # 1. Critical Row Loss
+        row_delta = (original.n_rows - modified.n_rows) / max(original.n_rows, 1)
+        if row_delta > threshold_row_loss:
+            anomalies.append(
+                f"Significant Row Loss: {row_delta:.1%} of data dropped "
+                f"({original.n_rows} -> {modified.n_rows})"
+            )
+        elif row_delta < -0.01: # Small growth is fine (augmentation), but large is suspicious
+             pass
+
+        # 2. Sparsity Spike (Increased missingness)
+        if modified.sparsity > original.sparsity + threshold_sparsity_drift:
+            anomalies.append(
+                f"Sparsity Spike: Missing values increased from "
+                f"{original.sparsity:.1%} to {modified.sparsity:.1%}"
+            )
+
+        # 3. Statistical Drift (Noise/Complexity)
+        if abs(original.noise_estimate - modified.noise_estimate) > 0.5:
+             anomalies.append(
+                 f"Statistical Drift: Noise estimate shifted significantly "
+                 f"({original.noise_estimate:.3f} -> {modified.noise_estimate:.3f})"
+             )
+
+        # 4. Target Type Mutation (Should NOT happen)
+        if original.target_type != modified.target_type and original.target_type != "unknown":
+             anomalies.append(
+                 f"Target Mutation: Data task changed from "
+                 f"{original.target_type} to {modified.target_type}"
+             )
+
+        return anomalies
+
     def _suggest_task_and_models(
         self,
         fp: DataFingerprint,

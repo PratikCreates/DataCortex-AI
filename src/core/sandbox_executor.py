@@ -13,8 +13,9 @@ import asyncio
 import logging
 import time
 import os
+import ast
 from dataclasses import dataclass, field
-from typing import Optional, Callable, Awaitable
+from typing import Optional, Callable, Awaitable, Set
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +63,13 @@ class SandboxExecutor:
         workspace_name: str,
         max_retries: int = 3,
         error_reflector: Optional[Callable[[str, str, str], Awaitable[str]]] = None,
+        guardian: Optional[Callable[[str], Awaitable[bool]]] = None,
     ):
         self.api_key = blaxel_api_key
         self.workspace = workspace_name
         self.max_retries = max_retries
         self.error_reflector = error_reflector
+        self.guardian = guardian
         self._sandbox_instance = None
 
     async def execute(
@@ -93,6 +96,19 @@ class SandboxExecutor:
         last_result = None
 
         for attempt in range(1, self.max_retries + 1):
+            # 🛡️ CLAIM 3: Multi-Judge Guardian Validation
+            if self.guardian:
+                logger.info(f"Invoking Guardian for code validation (attempt {attempt})")
+                is_safe = await self.guardian(current_code)
+                if not is_safe:
+                    logger.warning(f"Guardian rejected code on attempt {attempt}")
+                    return ExecutionResult(
+                        success=False,
+                        stderr="Security Violation: Guardian LLM rejected the generated code.",
+                        code_executed=current_code,
+                        attempt=attempt,
+                    )
+
             result = await self._execute_in_sandbox(
                 code=current_code,
                 config=config,
@@ -143,6 +159,9 @@ class SandboxExecutor:
         on_log: Optional[Callable[[str], None]] = None,
     ) -> ExecutionResult:
         """Execute code in a Blaxel sandbox."""
+        # 🛡️ SECURITY: Run static analysis before execution
+        CodeValidator.validate(code)
+        
         start_time = time.time()
 
         try:
@@ -210,6 +229,14 @@ class SandboxExecutor:
                 sandbox_name=sandbox_name,
             )
 
+        except UnsafeCodeError as e:
+            return ExecutionResult(
+                success=False,
+                stderr=f"Security Violation: {str(e)}",
+                code_executed=code,
+                attempt=attempt,
+            )
+
         except ImportError:
             # Fallback: local execution (for development without Blaxel)
             logger.warning("Blaxel SDK not available. Falling back to local execution.")
@@ -233,6 +260,9 @@ class SandboxExecutor:
         start_time: float,
     ) -> ExecutionResult:
         """Fallback: execute code locally via subprocess (dev mode)."""
+        # 🛡️ SECURITY: Run static analysis before execution
+        CodeValidator.validate(code)
+        
         import subprocess
         import tempfile
 
@@ -312,3 +342,68 @@ def _indent(text: str, spaces: int) -> str:
     """Indent each line of text."""
     prefix = " " * spaces
     return "\n".join(prefix + line for line in text.split("\n"))
+
+
+class UnsafeCodeError(Exception):
+    """Raised when code fails static analysis safety checks."""
+    pass
+
+
+class CodeValidator:
+    """
+    Static analysis for AI-generated code.
+    Blocks dangerous imports and syscalls before execution.
+    """
+
+    FORBIDDEN_MODULES: Set[str] = {
+        "os", "subprocess", "shutil", "socket", "requests", "urllib",
+        "ftplib", "telnetlib", "smtplib", "pickle", "marshal", "shelve",
+    }
+
+    FORBIDDEN_FUNCTIONS: Set[str] = {
+        "eval", "exec", "getattr", "setattr", "delattr", "hasattr",
+        "__import__", "open", "input", "globals", "locals",
+    }
+
+    @classmethod
+    def validate(cls, code: str) -> None:
+        """
+        Analyze code AST to find forbidden patterns.
+        
+        Args:
+            code: Python code string to validate
+            
+        Raises:
+            UnsafeCodeError: If code contains forbidden operations
+        """
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as e:
+            raise UnsafeCodeError(f"Syntax error in generated code: {e}")
+
+        for node in ast.walk(tree):
+            # Check imports
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.split('.')[0] in cls.FORBIDDEN_MODULES:
+                        raise UnsafeCodeError(f"Forbidden import: {alias.name}")
+            
+            if isinstance(node, ast.ImportFrom):
+                if node.module and node.module.split('.')[0] in cls.FORBIDDEN_MODULES:
+                    raise UnsafeCodeError(f"Forbidden import from: {node.module}")
+
+            # Check function calls
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    if node.func.id in cls.FORBIDDEN_FUNCTIONS:
+                        raise UnsafeCodeError(f"Forbidden function call: {node.func.id}")
+                
+                # Check for os.system, etc.
+                if isinstance(node.func, ast.Attribute):
+                    if isinstance(node.func.value, ast.Name):
+                        if node.func.value.id in cls.FORBIDDEN_MODULES:
+                             raise UnsafeCodeError(f"Forbidden module attribute access: {node.func.value.id}.{node.func.attr}")
+
+            # Check for direct file writing (open)
+            if isinstance(node, ast.Attribute) and node.attr == 'open':
+                raise UnsafeCodeError("Forbidden attribute access: .open()")

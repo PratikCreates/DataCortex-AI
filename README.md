@@ -4,7 +4,8 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Enterprise Ready](https://img.shields.io/badge/Safety-Enterprise--Grade-green.svg)](#-enterprise-safety--transparency)
 
-**DataCortex-AI** is a high-performance, agentic operating system for the automated data science lifecycle. It orchestrates specialized AI agents to handle the complexity of data ingestion, exploratory analysis, recursive modeling, and executive synthesis within secure, isolated execution environments.
+**DataCortex-AI** is a high-performance, agentic operating system for the automated data science lifecycle. 
+It orchestrates specialized AI agents to handle the complexity of data ingestion, exploratory analysis, recursive modeling, and executive synthesis within secure, isolated execution environments.
 
 ---
 
