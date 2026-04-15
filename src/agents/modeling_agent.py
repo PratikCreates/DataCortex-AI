@@ -651,8 +651,9 @@ print(json.dumps(results, default=str))
         # Dynamically add XGBoost and LightGBM
         try:
             from xgboost import XGBClassifier, XGBRegressor
-            xgb_cw = sum(balance) if cw else 1 # mock
-            model_map["XGBClassifier"] = ("XGBoost", XGBClassifier(n_estimators=n_est, learning_rate=learning_rate, use_label_encoder=False, eval_metric="logloss", random_state=42))
+            # If cw (class weight) is needed, use the numeric balance metric, otherwise 1.0
+            xgb_cw = (1.0 / balance) if cw and balance > 0 else 1.0
+            model_map["XGBClassifier"] = ("XGBoost", XGBClassifier(n_estimators=n_est, learning_rate=learning_rate, scale_pos_weight=xgb_cw, use_label_encoder=False, eval_metric="logloss", random_state=42))
             model_map["XGBRegressor"] = ("XGBoost", XGBRegressor(n_estimators=n_est, learning_rate=learning_rate, random_state=42))
         except ImportError:
             pass
@@ -661,6 +662,14 @@ print(json.dumps(results, default=str))
             from lightgbm import LGBMClassifier, LGBMRegressor
             model_map["LGBMClassifier"] = ("LightGBM", LGBMClassifier(n_estimators=n_est, learning_rate=learning_rate, class_weight=cw, random_state=42, verbose=-1))
             model_map["LGBMRegressor"] = ("LightGBM", LGBMRegressor(n_estimators=n_est, learning_rate=learning_rate, random_state=42, verbose=-1))
+        except ImportError:
+            pass
+            
+        # Dynamically add CatBoost (The Ultimate Categorical/Numerical Handler)
+        try:
+            from catboost import CatBoostClassifier, CatBoostRegressor
+            model_map["CatBoostClassifier"] = ("CatBoost", CatBoostClassifier(iterations=n_est, learning_rate=learning_rate, auto_class_weights="Balanced" if cw else "None", verbose=0, random_seed=42))
+            model_map["CatBoostRegressor"] = ("CatBoost", CatBoostRegressor(iterations=n_est, learning_rate=learning_rate, verbose=0, random_seed=42))
         except ImportError:
             pass
 
@@ -672,8 +681,14 @@ print(json.dumps(results, default=str))
             ]
             if "LGBMClassifier" in model_map:
                 base_estimators.append(('lgbm', model_map["LGBMClassifier"][1]))
+            if "XGBClassifier" in model_map:
+                base_estimators.append(('xgb', model_map["XGBClassifier"][1]))
+            if "CatBoostClassifier" in model_map:
+                base_estimators.append(('cat', model_map["CatBoostClassifier"][1]))
             
+            # The DataCortex-Omega Stack (The best model achievable within sklearn abstractions)
             model_map["StackingClassifier"] = ("DeepStacker", StackingClassifier(estimators=base_estimators, final_estimator=LogisticRegression(), cv=3, n_jobs=-1))
+            model_map["DataCortex_Omega_Stacker"] = ("DataCortex_Omega", StackingClassifier(estimators=base_estimators, final_estimator=LogisticRegression(), cv=5, n_jobs=-1))
             model_map["VotingClassifier"] = ("SoftVoter", VotingClassifier(estimators=base_estimators, voting='soft', n_jobs=-1))
 
         instances = []
