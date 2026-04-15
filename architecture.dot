@@ -1,0 +1,81 @@
+digraph DataCortexAI_Architecture {
+    fontname="Helvetica,Arial,sans-serif"
+    node [fontname="Helvetica,Arial,sans-serif" shape=box style=filled fillcolor="#ffffff"]
+    edge [fontname="Helvetica,Arial,sans-serif" color="#555555" penwidth=1.5]
+
+    // Graph settings
+    rankdir=TB
+    compound=true
+    nodesep=0.7
+    ranksep=0.8
+
+    // Styling Clusters
+    subgraph cluster_input {
+        label="Input Boundary"
+        style=filled
+        fillcolor="#f8f9fa"
+        color="#dee2e6"
+        User [label="User Request & Dataset (CSV)" shape=cylinder style=filled fillcolor="#d1c4e9"]
+    }
+
+    subgraph cluster_agents {
+        label="Multi-Agent Execution Layer (NVIDIA NIM Frontiers)"
+        style=filled
+        fillcolor="#e9f7ef"
+        color="#a9dfbf"
+
+        Planner [label="Planner Agent\n(Kimi-K2-Thinking 256K)\nDAG Orchestrator" fillcolor="#a2d9ce"]
+        Ingestion [label="Ingestion Agent\nData Cleanse & Standardize" fillcolor="#abebc6"]
+        EDA [label="EDA Agent\nMath/Stats Pipeline (Direct)" fillcolor="#abebc6"]
+        Modeler [label="Modeling Agent\n(DeepSeek-V3.2)\nOptuna + Stack Ensembles" fillcolor="#76d7c4"]
+        Report [label="Narrative Agent\n(Llama 3.3 70B)" fillcolor="#abebc6"]
+        Guardian [label="Guardian Agent\n(Llama-Guard 4 12B)" fillcolor="#f9e79f" shape=hexagon]
+    }
+
+    subgraph cluster_memory {
+        label="Stateful Execution Memory"
+        style=filled
+        fillcolor="#ebf5fb"
+        color="#aed6f1"
+
+        Fingerprint [label="Data Fingerprint\n(Dimensions: Sparsity, Class Balance, Noise)" shape=note fillcolor="#d6eaf8"]
+        Registry [label="Artifact Registry\n(JSON Cross-Phase Communication)" shape=cylinder fillcolor="#85c1e9"]
+    }
+
+    subgraph cluster_sandbox {
+        label="Remote Isolation environment"
+        style=filled
+        fillcolor="#fdf2e9"
+        color="#f5cba7"
+
+        Sandbox [label="Cloud Executor Sandbox\n(AST Verified)" shape=component fillcolor="#edbb99"]
+        Optuna [label="Optuna HPO Tuning Phase" fillcolor="#e59866"]
+    }
+
+    // Edges (Execution Flow)
+    User -> Planner [label=" Task Intent"]
+    Planner -> Ingestion [label=" Phase 1"]
+    
+    Ingestion -> Fingerprint [label=" Generates"]
+    Fingerprint -> Registry [label=" Saves"]
+
+    Planner -> EDA [label=" Phase 2"]
+    EDA -> Registry [label=" Math Results"]
+
+    Planner -> Modeler [label=" Phase 3"]
+    Registry -> Modeler [label=" Injects Context" style=dashed]
+    
+    // Modeling loop
+    Modeler -> Guardian [label=" Proposed Python Script" color="#e74c3c"]
+    Guardian -> Sandbox [label=" AST Pass (Claim 3)" color="#2ecc71"]
+    Guardian -> Modeler [label=" AST Reject" color="#e74c3c" style=dashed]
+    
+    Sandbox -> Optuna [label=" Active RL Iterations"]
+    Optuna -> Registry [label=" Model Checkpoints"]
+
+    Planner -> Report [label=" Phase 4"]
+    Registry -> Report [label=" Load Prior Outputs"]
+
+    Report -> Output [label=" Synthesize Final"]
+    Output [label="Data Science Document (Markdown)" shape=note style=filled fillcolor="#d1c4e9"]
+}
