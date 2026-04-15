@@ -14,13 +14,22 @@ Most "AutoML" platforms (e.g., TPOT, Auto-Sklearn) use rigid algorithmic guessin
 DataCortex-AI completely side-steps evolutionary brute-force logic in three ways:
 
 1. **Meta-Cognitive Data Fingerprinting:** Rather than guessing models, DataCortex-AI computes mathematical parameters up-front: Matrix Sparsity ratio, Multivariate Interaction, Class Imbalance, and Noise Frequency. The Planner LLM translates this "Fingerprint" into a targeted, optimized algorithm sequence dynamically.
+    
+    ![Data Fingerprinting: Feature Importance Validation](visualizations/04_sota_feature_importance.png)
+    
 2. **Agentic Reinforcement Learning:** When testing models, if the SOTA algorithms underperform, the Modeling Agent escalates the response dynamically. It loops backwards and autonomously authors complex **Meta-Staker Super-Ensembles**, seamlessly chaining `CatBoost`, `XGBoost`, and `LightGBM` under a Logistic Regression judge.
 3. **Optuna Bayesian Infusion:** DataCortex-AI injects Optuna hyperparameter trials into its executing agents, allowing the software to traverse loss-functions recursively without needing explicit hard-coded bounds.
 
 In rigorous comprehensive testing, **DataCortex-Omega** (our peak internal framework configuration) entirely obliterated existing AI agents, scoring an active cumulative cross-dataset benchmark of **0.9036**—shattering the capabilities of standalone genetic models.
 
+![Multi-Tier Benchmark Validation](visualizations/02_performance_benchmark_obliteration.png)
+
+![ROC/AUC Mathematical Superiority Proof](visualizations/03_roc_auc_analysis.png)
+
 ## 3. Core Architecture
-*(Please reference the generated high-resolution `05_advanced_architecture_diagram.png` in the `visualizations/` repository for exact physical mapping).*
+*(The following schematic illustrates the decentralized intelligence boundaries and Multi-Judge safety mechanisms)*
+
+![DataCortex-AI SOTA System Architecture](visualizations/05_advanced_architecture_diagram.png)
 
 1. **The Planner (Kimi-K2-Thinking 256k):** The overarching consciousness. It detects human intent and provisions resources into a Directed Acyclic Graph (DAG) for subordinate agents.
 2. **The Implementers (DeepSeek-V3.2):** High-efficiency frontier reasoning models assigned specific analytical tasks (EDA, imputation, model training) that independently write the target Python code based on the DAG.
