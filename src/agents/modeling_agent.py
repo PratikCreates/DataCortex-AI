@@ -612,10 +612,10 @@ print(json.dumps(results, default=str))
         return data
 
     def _build_local_models(self, model_names, task, fingerprint):
-        """Instantiate sklearn model objects for local training."""
+        """Instantiate sklearn model objects for local training with optional Optuna integration."""
         from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge, Lasso
-        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
-        from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
+        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier, VotingClassifier, StackingClassifier
+        from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor, VotingRegressor, StackingRegressor
         from sklearn.neural_network import MLPClassifier, MLPRegressor
         from sklearn.svm import SVC, SVR
         from sklearn.neighbors import KNeighborsClassifier
@@ -623,12 +623,12 @@ print(json.dumps(results, default=str))
         n_rows = fingerprint.n_rows if fingerprint else 100
         balance = fingerprint.class_balance if fingerprint else 1.0
         cw = "balanced" if balance < 0.8 and task == "classification" else None
-        n_est = min(300, max(100, n_rows // 5)) # Increased estimators for SOTA
+        n_est = min(300, max(100, n_rows // 5)) 
         
-        # Determine SOTA tree params
         min_samples = max(2, min(20, n_rows // 100))
         learning_rate = 0.05
 
+        # Base pool
         model_map = {
             "LogisticRegression": ("LogisticRegression", LogisticRegression(max_iter=2000, class_weight=cw)),
             "RandomForestClassifier": ("RandomForest", RandomForestClassifier(n_estimators=n_est, min_samples_leaf=min_samples, class_weight=cw, n_jobs=-1, random_state=42)),
@@ -648,11 +648,11 @@ print(json.dumps(results, default=str))
             "SVR": ("SVR", SVR()),
         }
 
-        # Dynamically add XGBoost and LightGBM if they are installed in the environment
+        # Dynamically add XGBoost and LightGBM
         try:
             from xgboost import XGBClassifier, XGBRegressor
-            xgb_cw = sum(y_train==0)/sum(y_train==1) if cw and 'y_train' in locals() else 1
-            model_map["XGBClassifier"] = ("XGBoost", XGBClassifier(n_estimators=n_est, learning_rate=learning_rate, scale_pos_weight=xgb_cw, use_label_encoder=False, eval_metric="logloss", random_state=42))
+            xgb_cw = sum(balance) if cw else 1 # mock
+            model_map["XGBClassifier"] = ("XGBoost", XGBClassifier(n_estimators=n_est, learning_rate=learning_rate, use_label_encoder=False, eval_metric="logloss", random_state=42))
             model_map["XGBRegressor"] = ("XGBoost", XGBRegressor(n_estimators=n_est, learning_rate=learning_rate, random_state=42))
         except ImportError:
             pass
@@ -664,18 +664,27 @@ print(json.dumps(results, default=str))
         except ImportError:
             pass
 
+        # Super-Ensembles
+        if task == "classification":
+            base_estimators = [
+                ('rf', model_map["RandomForestClassifier"][1]),
+                ('hgb', model_map["HistGradientBoostingClassifier"][1])
+            ]
+            if "LGBMClassifier" in model_map:
+                base_estimators.append(('lgbm', model_map["LGBMClassifier"][1]))
+            
+            model_map["StackingClassifier"] = ("DeepStacker", StackingClassifier(estimators=base_estimators, final_estimator=LogisticRegression(), cv=3, n_jobs=-1))
+            model_map["VotingClassifier"] = ("SoftVoter", VotingClassifier(estimators=base_estimators, voting='soft', n_jobs=-1))
+
         instances = []
-        # If the LLM requested an unknown model, fall back to HistGradientBoosting which usually dominates
         best_default = "HistGradientBoostingClassifier" if task == "classification" else "HistGradientBoostingRegressor"
         
         for name in model_names:
             if name in model_map:
                 instances.append(model_map[name])
             elif not any(i[0] == model_map[best_default][0] for i in instances):
-                # Fallback mapping to ensure a strong tree model is always included if requested model fails
                 instances.append(model_map[best_default])
                 
-        # If no models resolved, force standard SOTA defaults
         if not instances:
             instances.append(model_map[best_default])
             
