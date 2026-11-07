@@ -358,11 +358,17 @@ class CodeValidator:
     FORBIDDEN_MODULES: Set[str] = {
         "os", "subprocess", "shutil", "socket", "requests", "urllib",
         "ftplib", "telnetlib", "smtplib", "pickle", "marshal", "shelve",
+        "pathlib",
     }
 
     FORBIDDEN_FUNCTIONS: Set[str] = {
         "eval", "exec", "getattr", "setattr", "delattr", "hasattr",
         "__import__", "open", "input", "globals", "locals",
+    }
+
+    FORBIDDEN_ATTRIBUTES: Set[str] = {
+        "open", "unlink", "remove", "rmdir", "rename", "replace", "write_text",
+        "write_bytes", "chmod", "symlink_to", "hardlink_to", "system", "popen",
     }
 
     @classmethod
@@ -404,6 +410,8 @@ class CodeValidator:
                         if node.func.value.id in cls.FORBIDDEN_MODULES:
                              raise UnsafeCodeError(f"Forbidden module attribute access: {node.func.value.id}.{node.func.attr}")
 
-            # Check for direct file writing (open)
-            if isinstance(node, ast.Attribute) and node.attr == 'open':
-                raise UnsafeCodeError("Forbidden attribute access: .open()")
+            if isinstance(node, ast.Attribute):
+                if node.attr.startswith("__"):
+                    raise UnsafeCodeError(f"Forbidden dunder attribute access: {node.attr}")
+                if node.attr in cls.FORBIDDEN_ATTRIBUTES:
+                    raise UnsafeCodeError(f"Forbidden attribute access: .{node.attr}()")

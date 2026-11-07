@@ -115,7 +115,10 @@ class PlannerAgent:
                 file_content=file_content,
                 file_name=file_name,
                 registry=registry,
+                target_column=target_column,
             )
+            target_column = ingestion_result.get("target_column") or target_column
+            checkpoint.target_column = target_column
 
             checkpoint.mark_phase_completed("ingestion", {
                 "rows": ingestion_result.get("n_rows", 0),
@@ -140,6 +143,7 @@ class PlannerAgent:
             await self._run_integrity_check(
                 ingestion_result=ingestion_result,
                 fingerprint=fingerprint,
+                target_column=target_column,
                 registry=registry,
             )
 
@@ -150,7 +154,7 @@ class PlannerAgent:
                 target_column=target_column,
                 registry=registry,
             )
-            checkpoint.execution_plan = execution_plan
+            checkpoint.execution_plan = ["ingestion", "profiling"] + execution_plan
             await self._emit_event({"type": "plan_generated", "plan": execution_plan})
 
             # ── PHASE 3: Exploratory Data Analysis ────
@@ -254,8 +258,7 @@ class PlannerAgent:
 
         if target_column:
             plan.append("modeling")
-        elif fingerprint and fingerprint.suggested_task != "clustering":
-            # Try to auto-detect if modeling makes sense
+        elif fingerprint and fingerprint.suggested_task in {"classification", "regression"}:
             plan.append("modeling")
 
         plan.append("reporting")
@@ -265,12 +268,14 @@ class PlannerAgent:
             # Skip modeling for very small datasets
             if fingerprint.n_rows < 30:
                 if "modeling" in plan:
-                    # GUARDIAN CHECK
-                    is_safe = await self.llm.validate(
-                        action="Skip modeling",
-                        reasoning=f"Dataset size ({fingerprint.n_rows} rows) is below the statistical reliability threshold (<30).",
-                        context=f"Data Fingerprint: {fingerprint.to_dict()}"
-                    )
+                    if self.llm.has_provider_credentials:
+                        is_safe = await self.llm.validate(
+                            action="Skip modeling",
+                            reasoning=f"Dataset size ({fingerprint.n_rows} rows) is below the statistical reliability threshold (<30).",
+                            context=f"Data Fingerprint: {fingerprint.to_dict()}"
+                        )
+                    else:
+                        is_safe = True
                     if is_safe:
                         plan.remove("modeling")
                         logger.info("Skipping modeling: dataset too small (<30 rows)")
@@ -298,6 +303,7 @@ class PlannerAgent:
         self,
         ingestion_result: dict,
         fingerprint,
+        target_column: Optional[str],
         registry: ArtifactRegistry,
     ):
         """
@@ -319,7 +325,7 @@ class PlannerAgent:
 
             # Re-fingerprint the cleaned data (what ingestion returned)
             cleaned_df = pd.read_csv(io.StringIO(df_csv))
-            fp_cleaned = DataFingerprinter().compute(cleaned_df)
+            fp_cleaned = DataFingerprinter().compute(cleaned_df, target_col=target_column)
 
             # Compare against base fingerprint (which was computed on cleaned data too)
             # Key check: verify n_rows integrity vs original schema

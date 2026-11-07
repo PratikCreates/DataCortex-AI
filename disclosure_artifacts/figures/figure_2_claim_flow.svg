@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="260" viewBox="0 0 980 260">
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+<path d="M0,0 L0,6 L9,3 z" fill="#334155" />
+</marker>
+</defs>
+<rect width="980" height="260" fill="#ffffff"/>
+<text x="40" y="34" font-family="Arial" font-size="18" font-weight="700" fill="#111827">Claimed Method Flow</text>
+<rect x="40" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="86" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">1</text>
+<text x="86" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Receive Dataset</text>
+<line x1="132" y1="127" x2="145" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="145" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="191" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">2</text>
+<text x="191" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Parse +</text>
+<text x="191" y="154" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Profile</text>
+<line x1="237" y1="127" x2="250" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="250" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="296" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">3</text>
+<text x="296" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Compute Fingerprint</text>
+<line x1="342" y1="127" x2="355" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="355" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="401" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">4</text>
+<text x="401" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Plan Lifecycle</text>
+<line x1="447" y1="127" x2="460" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="460" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="506" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">5</text>
+<text x="506" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Register Artifacts</text>
+<line x1="552" y1="127" x2="565" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="565" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="611" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">6</text>
+<text x="611" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Integrity Gate</text>
+<line x1="657" y1="127" x2="670" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="670" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="716" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">7</text>
+<text x="716" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">AST Safety</text>
+<text x="716" y="154" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Gate</text>
+<line x1="762" y1="127" x2="775" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="775" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="821" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">8</text>
+<text x="821" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Model or</text>
+<text x="821" y="154" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Basket Analysis</text>
+<line x1="867" y1="127" x2="880" y2="127" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="880" y="92" width="92" height="70" rx="8" fill="#f8fafc" stroke="#334155"/>
+<text x="926" y="122" text-anchor="middle" font-family="Arial" font-size="11" font-weight="700" fill="#111827">9</text>
+<text x="926" y="140" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Report +</text>
+<text x="926" y="154" text-anchor="middle" font-family="Arial" font-size="10" fill="#111827">Checkpoint</text>
+</svg>

@@ -1,0 +1,51 @@
+{
+  "generated_by": "scripts/generate_disclosure_artifacts.py",
+  "purpose": "Technical disclosure diagrams, validation summaries, and benchmark evidence",
+  "figures": [
+    "disclosure_artifacts/figures/figure_1_architecture.svg",
+    "disclosure_artifacts/figures/figure_1_architecture.png",
+    "disclosure_artifacts/figures/figure_2_claim_flow.svg",
+    "disclosure_artifacts/figures/figure_2_claim_flow.png",
+    "disclosure_artifacts/figures/figure_3_market_basket_branch.svg",
+    "disclosure_artifacts/figures/figure_3_market_basket_branch.png",
+    "disclosure_artifacts/figures/figure_4_validation_benchmark_scores.png",
+    "disclosure_artifacts/figures/figure_5_baseline_comparison.png",
+    "disclosure_artifacts/figures/figure_6_capability_comparison.png",
+    "disclosure_artifacts/figures/figure_7_failure_mode_coverage.png",
+    "disclosure_artifacts/figures/figure_8_executable_model_comparison.png"
+  ],
+  "benchmarks": [
+    "disclosure_artifacts/benchmarks/validation_benchmarks.json",
+    "disclosure_artifacts/benchmarks/validation_benchmarks.csv",
+    "disclosure_artifacts/benchmarks/kaggle_e2e_results.json",
+    "disclosure_artifacts/benchmarks/baseline_comparison.json",
+    "disclosure_artifacts/benchmarks/baseline_comparison.csv",
+    "disclosure_artifacts/benchmarks/capability_comparison.json",
+    "disclosure_artifacts/benchmarks/capability_comparison.csv",
+    "disclosure_artifacts/benchmarks/failure_mode_validation.json",
+    "disclosure_artifacts/benchmarks/failure_mode_validation.csv",
+    "disclosure_artifacts/benchmarks/evidence_quality_grading.json",
+    "disclosure_artifacts/benchmarks/evidence_quality_grading.csv",
+    "disclosure_artifacts/benchmarks/comparative_benchmarks.json",
+    "disclosure_artifacts/benchmarks/comparative_benchmarks_summary.csv",
+    "disclosure_artifacts/benchmarks/comparative_benchmarks_long.csv",
+    "disclosure_artifacts/benchmarks/novelty_mechanisms.json",
+    "disclosure_artifacts/benchmarks/novelty_mechanisms.csv"
+  ],
+  "validation_documents": [
+    "VALIDATION_APPENDIX.md",
+    "CLAIM_CHART.md",
+    "VALIDATION_RESULTS.md",
+    "COMPREHENSIVE_RESULTS.md"
+  ],
+  "test_evidence": {
+    "pytest": "74 passed",
+    "static_code_safety_attack_block_rate": "100%",
+    "task_detection_accuracy": "7/7 completed validation datasets"
+  },
+  "limits": [
+    "Local laboratory evidence only",
+    "No production security certification claimed",
+    "No external state-of-the-art claim made"
+  ]
+}

@@ -34,13 +34,16 @@ Thumbs.db
 # Artifacts & Persistent State
 artifacts/
 checkpoints/
+demo_outputs/
 *.tmp
 *.log
 sandbox_outputs/
 
-# Benchmarks & Scripts
+# Benchmarks, generated scripts, and local data exports
 benchmarks/
-scripts/
+scripts/*
+!scripts/run_demo.py
+!scripts/validate_claims.py
 example_*.py
 *.csv
 
@@ -54,8 +57,7 @@ BENCHMARK.md
 PATENT_NOVELTY.md
 PROBLEMS.md
 
-# Tests
-tests/
+# Test caches and coverage
 .pytest_cache/
 htmlcov/
 .coverage

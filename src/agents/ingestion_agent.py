@@ -198,6 +198,7 @@ class IngestionAgent:
         total_cells = df.shape[0] * df.shape[1]
         missing_cells = df.isnull().sum().sum()
         duplicate_rows = df.duplicated().sum()
+        is_market_basket = self._looks_like_market_basket(df)
 
         # Column-level quality
         column_quality = {}
@@ -221,7 +222,7 @@ class IngestionAgent:
         overall_score = 1.0
         if missing_cells > 0:
             overall_score -= min(0.3, (missing_cells / total_cells))
-        if duplicate_rows > 0:
+        if duplicate_rows > 0 and not is_market_basket:
             overall_score -= min(0.2, (duplicate_rows / df.shape[0]))
 
         return {
@@ -231,6 +232,7 @@ class IngestionAgent:
             "missing_pct": round(missing_cells / max(total_cells, 1) * 100, 2),
             "duplicate_rows": int(duplicate_rows),
             "duplicate_pct": round(duplicate_rows / max(df.shape[0], 1) * 100, 2),
+            "duplicate_interpretation": "repeated_basket_frequency" if is_market_basket else "possible_duplicate_records",
             "column_quality": column_quality,
         }
 
@@ -238,6 +240,10 @@ class IngestionAgent:
 
     def _guess_target_column(self, df: pd.DataFrame, schema: dict) -> Optional[str]:
         """Heuristically guess the target column."""
+        if self._looks_like_market_basket(df):
+            logger.info("Dataset resembles market-basket transactions; not auto-selecting a supervised target")
+            return None
+
         candidates = []
 
         for col_info in schema["columns"]:
@@ -249,12 +255,16 @@ class IngestionAgent:
                 "diagnosis", "default", "churn", "approved",
             ]
             for keyword in target_keywords:
-                if keyword in name:
+                if keyword == "y":
+                    if name == "y":
+                        candidates.append((col_info["name"], 10))
+                        break
+                elif keyword in name:
                     candidates.append((col_info["name"], 10))
                     break
 
             # Last column heuristic
-            if col_info["name"] == df.columns[-1]:
+            if col_info["name"] == df.columns[-1] and not self._last_column_looks_like_item_slot(df):
                 candidates.append((col_info["name"], 3))
 
         # Return highest scoring candidate
@@ -264,6 +274,30 @@ class IngestionAgent:
 
         return None
 
+    def _looks_like_market_basket(self, df: pd.DataFrame) -> bool:
+        """Detect transaction item-slot tables where supervised target guessing is unsafe."""
+        if df.empty or len(df.columns) < 4:
+            return False
+        object_cols = df.select_dtypes(include=["object", "category"]).columns
+        if len(object_cols) / max(len(df.columns), 1) < 0.5:
+            return False
+        missing_ratio = df[object_cols].isna().mean().mean()
+        repeated_value_ratio = sum(
+            df[col].nunique(dropna=True) < len(df) * 0.25 for col in object_cols
+        ) / max(len(object_cols), 1)
+        item_slot_names = sum(
+            str(col).lower().startswith("item") for col in df.columns
+        ) / max(len(df.columns), 1)
+        return missing_ratio > 0.2 and (repeated_value_ratio >= 0.5 or item_slot_names >= 0.5)
+
+    def _last_column_looks_like_item_slot(self, df: pd.DataFrame) -> bool:
+        if df.empty:
+            return False
+        col = df.columns[-1]
+        if str(col).lower() in {"target", "label", "class", "outcome", "result", "y"}:
+            return False
+        return df[col].dtype == "object" and df[col].isna().mean() > 0.25
+
     # ─── Auto Cleaning ────────────────────────────────
 
     def _auto_clean(self, df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -271,6 +305,7 @@ class IngestionAgent:
         log = {"actions": [], "rows_before": len(df), "cols_before": len(df.columns)}
 
         df_clean = df.copy()
+        is_market_basket = self._looks_like_market_basket(df_clean)
 
         # Remove fully empty columns
         empty_cols = [c for c in df_clean.columns if df_clean[c].isnull().all()]
@@ -286,7 +321,11 @@ class IngestionAgent:
 
         # Remove exact duplicate rows
         dup_count = df_clean.duplicated().sum()
-        if dup_count > 0:
+        if dup_count > 0 and is_market_basket:
+            log["actions"].append(
+                f"Kept {dup_count} repeated basket rows because duplicate transactions carry frequency signal"
+            )
+        elif dup_count > 0:
             df_clean.drop_duplicates(inplace=True)
             log["actions"].append(f"Removed {dup_count} duplicate rows")
 

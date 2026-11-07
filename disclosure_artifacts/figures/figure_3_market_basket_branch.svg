@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420">
+<rect width="760" height="420" fill="#ffffff"/>
+<text x="36" y="34" font-family="Arial" font-size="18" font-weight="700" fill="#111827">Market-Basket Branch Evidence</text>
+<rect x="50" y="70" width="660" height="54" rx="8" fill="#dbeafe" stroke="#334155"/>
+<text x="76" y="103" font-family="Arial" font-size="14" font-weight="700" fill="#111827">Detected structure</text>
+<text x="292" y="103" font-family="Arial" font-size="14" fill="#111827">Sparse item-slot transaction table</text>
+<rect x="50" y="134" width="660" height="54" rx="8" fill="#dcfce7" stroke="#334155"/>
+<text x="76" y="167" font-family="Arial" font-size="14" font-weight="700" fill="#111827">Target handling</text>
+<text x="292" y="167" font-family="Arial" font-size="14" fill="#111827">No automatic supervised target inferred</text>
+<rect x="50" y="198" width="660" height="54" rx="8" fill="#fef9c3" stroke="#334155"/>
+<text x="76" y="231" font-family="Arial" font-size="14" font-weight="700" fill="#111827">Duplicate handling</text>
+<text x="292" y="231" font-family="Arial" font-size="14" fill="#111827">2,824 repeated baskets preserved</text>
+<rect x="50" y="262" width="660" height="54" rx="8" fill="#ede9fe" stroke="#334155"/>
+<text x="76" y="295" font-family="Arial" font-size="14" font-weight="700" fill="#111827">Rows retained</text>
+<text x="292" y="295" font-family="Arial" font-size="14" fill="#111827">9,835 of 9,835 rows retained</text>
+<rect x="50" y="326" width="660" height="54" rx="8" fill="#fee2e2" stroke="#334155"/>
+<text x="76" y="359" font-family="Arial" font-size="14" font-weight="700" fill="#111827">Analysis output</text>
+<text x="292" y="359" font-family="Arial" font-size="14" fill="#111827">Top item: whole milk (2,513)</text>
+</svg>

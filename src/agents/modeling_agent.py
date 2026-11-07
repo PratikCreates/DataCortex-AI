@@ -10,6 +10,8 @@ feature importance analysis.
 
 import json
 import logging
+import time
+import asyncio
 from typing import Optional, Any
 
 from src.core.config import Config
@@ -84,32 +86,46 @@ class ModelingAgent:
         # Try sandbox first, fall back to local execution
         model_results = None
 
-        # Attempt sandbox execution
-        try:
-            executor = self._get_executor()
-            exec_result = await executor.execute(
-                code=training_code,
-                intent=f"Train {len(models_to_try)} models for {fingerprint.suggested_task if fingerprint else 'prediction'} on target '{target_column}'",
-            )
-            if exec_result.success and exec_result.stdout.strip():
-                try:
-                    model_results = json.loads(exec_result.stdout.strip())
-                except json.JSONDecodeError:
-                    model_results = self._parse_stdout_results(exec_result.stdout)
-            else:
-                logger.warning(f"Sandbox execution failed: {exec_result.stderr[:200]}")
-        except Exception as e:
-            logger.warning(f"Sandbox unavailable: {e}")
+        if self.config.settings.enable_remote_sandbox:
+            try:
+                executor = self._get_executor()
+                exec_result = await executor.execute(
+                    code=training_code,
+                    intent=f"Train {len(models_to_try)} models for {fingerprint.suggested_task if fingerprint else 'prediction'} on target '{target_column}'",
+                )
+                if exec_result.success and exec_result.stdout.strip():
+                    try:
+                        model_results = json.loads(exec_result.stdout.strip())
+                    except json.JSONDecodeError:
+                        model_results = self._parse_stdout_results(exec_result.stdout)
+                else:
+                    logger.warning(f"Sandbox execution failed: {exec_result.stderr[:200]}")
+            except Exception as e:
+                logger.warning(f"Sandbox unavailable: {e}")
+        else:
+            logger.info("Remote sandbox disabled; using local sklearn training")
 
         # ── Step 3b: Local fallback when sandbox fails ──
         if model_results is None or not model_results.get("models"):
             logger.info("Falling back to local sklearn training")
-            model_results = await self._train_locally(
-                fingerprint=fingerprint,
-                target_column=target_column,
-                models_to_try=models_to_try,
-                registry=registry,
-            )
+            if not getattr(self.llm, "has_provider_credentials", False):
+                model_results = await asyncio.to_thread(
+                    lambda: asyncio.run(
+                        self._train_locally(
+                            fingerprint=fingerprint,
+                            target_column=target_column,
+                            models_to_try=models_to_try,
+                            registry=registry,
+                        )
+                    )
+                )
+            else:
+                model_results = await self._train_locally(
+                    fingerprint=fingerprint,
+                    target_column=target_column,
+                    models_to_try=models_to_try,
+                    registry=registry,
+                )
 
         # ── Step 5: Register results ──────────────────
         registry.register(Phase.TRAINING, ArtifactType.MODEL_COMPARISON, model_results)
@@ -341,13 +357,15 @@ print(json.dumps(results, default=str))
     def _get_single_model_config(self, name: str, task: str, n_rows: int, balance: float) -> str:
         """Get model config tuned by fingerprint."""
         weight_param = "class_weight='balanced'" if balance < 0.8 and task == "classification" else ""
+        lr_weight = f", {weight_param}" if weight_param else ""
+        tree_weight = f"{weight_param}, " if weight_param else ""
 
         configs = {
-            "LogisticRegression": f'("LogisticRegression", LogisticRegression(max_iter=1000, {weight_param}))',
-            "RandomForestClassifier": f'("RandomForestClassifier", RandomForestClassifier(n_estimators={min(100, max(50, n_rows // 10))}, {weight_param}, random_state=42))',
+            "LogisticRegression": f'("LogisticRegression", LogisticRegression(max_iter=1000{lr_weight}))',
+            "RandomForestClassifier": f'("RandomForestClassifier", RandomForestClassifier(n_estimators={min(100, max(50, n_rows // 10))}, {tree_weight}random_state=42))',
             "GradientBoostingClassifier": f'("GradientBoosting", GradientBoostingClassifier(n_estimators={min(100, max(50, n_rows // 20))}, learning_rate=0.1, random_state=42))',
             "KNeighborsClassifier": f'("KNN", KNeighborsClassifier(n_neighbors={min(15, max(3, int(n_rows ** 0.5 / 5)))}))',
-            "SVC": f'("SVM", SVC({weight_param}, probability=True, random_state=42))',
+            "SVC": f'("SVM", SVC({tree_weight}probability=True, random_state=42))',
             "LinearRegression": '("LinearRegression", LinearRegression())',
             "Ridge": '("Ridge", Ridge(alpha=1.0))',
             "Lasso": '("Lasso", Lasso(alpha=0.1))',
@@ -396,11 +414,15 @@ print(json.dumps(results, default=str))
     ) -> dict:
         import io
         import json
+        import warnings
         import pandas as pd
         import numpy as np
         from sklearn.model_selection import cross_val_score, train_test_split
         from sklearn.preprocessing import StandardScaler, LabelEncoder
         from sklearn.impute import SimpleImputer
+        from sklearn.exceptions import ConvergenceWarning
+
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
         # Get CSV data from ingestion artifacts
         # Walk through artifacts to find full_csv or sample
@@ -454,8 +476,18 @@ print(json.dumps(results, default=str))
             # Handle categorical features
             X[col] = LabelEncoder().fit_transform(X[col].astype(str))
 
+        numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+        X = X[numeric_cols].dropna(axis=1, how="all")
+        if X.empty:
+            logger.warning("No usable feature columns after preprocessing")
+            return {"models": [], "error": "No usable feature columns after preprocessing"}
+
         imputer = SimpleImputer(strategy="median")
         X_imputed = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
+
+        if task == "classification" and len(pd.Series(y).dropna().unique()) < 2:
+            logger.warning("Target column has fewer than two classes")
+            return {"models": [], "error": "Target column has fewer than two classes"}
 
         X_train, X_test, y_train, y_test = train_test_split(
             X_imputed, y, test_size=0.2, random_state=42
@@ -463,6 +495,7 @@ print(json.dumps(results, default=str))
         scaler = StandardScaler()
         X_train_s = scaler.fit_transform(X_train)
         X_test_s = scaler.transform(X_test)
+        X_cv_s = StandardScaler().fit_transform(X_imputed)
 
         # Determine scoring
         scoring = "r2" if task == "regression" else "accuracy"
@@ -485,8 +518,11 @@ print(json.dumps(results, default=str))
                     model.fit(X_train_s, y_train)
                     test_score = float(model.score(X_test_s, y_test))
 
-                    cv_folds = min(5, max(2, len(y) // 5))
-                    cv_scores = cross_val_score(model, X_imputed.values, y.values, cv=cv_folds, scoring=scoring)
+                    min_class_count = pd.Series(y).value_counts().min() if task == "classification" else len(y)
+                    cv_folds = min(5, max(2, len(y) // 5), int(min_class_count))
+                    if cv_folds < 2:
+                        raise ValueError("Not enough target samples per class for cross-validation")
+                    cv_scores = cross_val_score(model, X_cv_s, y.values, cv=cv_folds, scoring=scoring)
 
                     m_result = {
                         "name": name,
@@ -535,6 +571,10 @@ print(json.dumps(results, default=str))
                 break
                 
             # EVALUATION PHASE: Ask LLM what models to try next based on current performance
+            if not getattr(self.llm, "has_provider_credentials", False):
+                logger.info("Remote LLM disabled or unavailable; ending adaptive model mutation loop")
+                break
+
             logger.info("  Analyzing results with LLM to select next iteration models...")
             
             # Ensure JSON serializable (clean NaNs)

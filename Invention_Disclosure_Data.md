@@ -1,78 +1,247 @@
-©VIT IPR&TTCELL  
-Invention Disclosure Format (IDF)-B  
-Document No. 02-IPR-R003  
-Issue No/Date 2/01.02.2024  
-Amd. No/Date 0/00.00.0000  
+# Invention Disclosure Format (IDF-B)
 
----
+## 1. Title of the Invention
 
-### 1. Title of the invention:
-DataCortex-AI: Autonomous Meta-Learning Software Agent with Multi-Judge Safety Governance and Fingerprint-Guided Execution
+**DataCortex-AI: Fingerprint-Guided Multi-Agent Automated Data Science with Cross-Phase Artifact Propagation, Data-Integrity Gating, and Pre-Execution Code Safety Validation**
 
-### 2. Field /Area of invention:
-Artificial Intelligence, Automated Machine Learning (AutoML), Multi-Agent Systems, Agentic Reinforcement Learning, Cybersecurity (AST static analysis validation).
+## 2. Field / Area of Invention
 
-### 3. Prior Patents and Publications from literature
-| Reference / Framework | Summary of Prior Art | Limitations & Gap |
+Artificial intelligence, automated data science, automated machine learning, multi-agent software orchestration, generated-code validation, data-quality monitoring, checkpointed workflow execution, market-basket dataset analysis, and reproducible machine-learning workflow evaluation.
+
+## 3. Problem Statement
+
+Automated data-science systems face several technical limitations:
+
+1. Broad model-search systems can evaluate unsuitable candidates before using dataset-specific statistical structure.
+2. Generated-code systems can execute unsafe or brittle code without deterministic pre-execution validation.
+3. Lifecycle stages often pass state informally, making it difficult to audit which upstream artifacts influenced downstream analysis.
+4. Automated cleaning can silently damage data through row loss, target mutation, sparsity drift, or inappropriate duplicate removal.
+5. Sparse item-slot transaction datasets can be incorrectly treated as supervised classification problems when no target column exists.
+6. User-facing systems can leave users without structured visibility into long-running phases.
+
+## 4. Prior Art and Publications from Literature
+
+| Reference / Framework | Summary of Prior Art | Limitation Addressed by This Invention |
 | --- | --- | --- |
-| **TPOT** (Genetic AutoML) | Evolutionary genetic searching over pipeline permutations. | Extremely slow convergence (>15 mins for basic datasets). Resource intensive brute force. |
-| **Auto-Sklearn** | Bayesian optimization over rigid algorithmic search spaces. | Lacks reasoning to understand dataset context. Does not write specific feature-engineering code. |
-| **AutoGluon** | Heavy ensembling without agentic intelligence loops. | Not portable across low-compute environments; lacks AST-sandboxing for generative code. |
+| TPOT | Genetic-programming approach for discovering machine-learning pipelines. | Searches broad pipeline permutations rather than using a phase-propagated dataset fingerprint as an execution-control signal. |
+| Auto-sklearn | Bayesian optimization and meta-learning over machine-learning pipelines. | Primarily optimizes predefined search spaces and does not center a phase-indexed artifact registry with integrity gates and generated-code AST validation. |
+| AutoGluon | Automated ensembling and model stacking for tabular ML. | Strong model automation, but not focused on generated-code validation, cross-phase artifact provenance, or market-basket-aware target suppression. |
+| Notebook and LLM code agents | Generate executable Python or notebook code from natural-language prompts. | Generated code can be unsafe or non-reproducible when executed without deterministic AST screening, artifact provenance, and data-integrity checks. |
+| Market-basket analysis tools | Compute association rules or item co-occurrence for transaction data. | Generally do not integrate with a full automated data-science lifecycle that also performs fingerprinted planning, artifact propagation, code validation, checkpointing, and report synthesis. |
 
-### 4. Summary and background of the invention (Address the gap / Novelty)
-Current Auto-Data Science platforms utilize rigid Bayesian or Evolutionary brute-force guessing to map algorithms to datasets, yielding severe computational lag and limiting portability. 
-**Gap Solved:** DataCortex-AI entirely side-steps brute-force evolution by employing *Meta-Cognitive Adaptive Planning*. It autonomously orchestrates a swarm of localized SOTA LLMs (Kimi-K2, DeepSeek-V3.2). 
-**Novelty:** The system immediately identifies an N-Dimensional "Data Fingerprint" (Sparsity, Imbalance, Correlative Density) to algorithmically map targeted models (e.g., bypassing standard tree models directly to a Meta-Stack of CatBoost + LightGBM + XGBoost) without testing irrelevant classifiers.
+## 5. Summary and Background of the Invention
 
-### 5. Objective(s) of Invention
-1. Automate the end-to-end Data Science execution pipeline (Ingestion, EDA, Training, Evaluation).
-2. Eradicate brute-force AutoML runtimes via Meta-Cognitive Fingerprint mapping.
-3. Protect proprietary runtime systems via *Multi-Judge Isolation* (Patent Claim 3) where isolated Guardian models evaluate AST parsing to prevent hallucinated code exploits.
-4. Obliterate existing statistical SOTA baselines utilizing Agentic Reinforcement Learning loops. 
+DataCortex-AI addresses the above limitations by combining:
 
-### 6. Working principle of the invent (in brief)
-DataCortex-AI constructs a localized Directed Acyclic Graph (DAG). 
-1. **Phase 1:** The Ingestion Agent defines the dataset schema and calculates the mathematical Data Fingerprint. 
-2. **Phase 2:** The EDA Agent runs statistical analysis locally, bypassing hallucinations. 
-3. **Phase 3:** The Modeler Agent evaluates the fingerprint and outputs python logic optimized for exact algorithms. If the initial SOTA algorithms fall below optimal threshold, the agent initiates an RL Loop mutating the code to formulate deep Meta-Stacker ensembles integrated with Bayesian Optuna optimization. 
-4. **Phase 4:** The Guardian Agent conducts an AST (Abstract Syntax Tree) check on the generated script, blocking destructive execution logic before deploying to the Cloud Sandbox for compilation.
+1. A structured data fingerprint computed before model selection.
+2. Fingerprint-guided planning for EDA, supervised modeling, reporting, and market-basket routing.
+3. A bounded model-family selection mechanism driven by fingerprint metrics.
+4. A phase-indexed artifact registry that propagates structured outputs between lifecycle agents.
+5. A fingerprint consistency gate that detects harmful data mutations.
+6. A deterministic AST-based safety validator for generated Python code.
+7. Checkpointed workflow execution and structured progress events.
+8. A reproducible validation harness and Kaggle end-to-end demo evidence.
 
-### 7. Description of the invention in detail (Include drawing and or photograph as needed)
-Central to the invention is the **Multi-Agent Decoupled Architecture**. Rather than monolithic code guessing, distinct Frontier models are assigned singular tasks, feeding their mathematical outputs back into a central JSON Artifact Registry for Context Injection. 
+## 6. Objectives of the Invention
 
-**DataCortex-Omega Ensembles:** The internal software constructs dynamic combinations of the three leading gradient boosters (`CatBoost`, `XGBoost`, and `LightGBM`) controlled by a logistic layer. 
+1. Automate major phases of a tabular data-science workflow: ingestion, profiling, exploratory analysis, modeling, evaluation, reporting, event streaming, and checkpointing.
+2. Select execution plans and model families using dataset characteristics rather than unbounded brute-force search.
+3. Preserve lifecycle phase outputs as structured artifacts for downstream context and auditability.
+4. Detect data-integrity anomalies caused by automated cleaning or transformation.
+5. Reject unsafe generated code before execution.
+6. Correctly identify sparse item-slot transaction datasets and avoid unsupported supervised target inference.
+7. Provide reproducible local validation evidence for task detection, data integrity, code safety, modeling behavior, and demo flows.
 
-*(See Architectural Design Schema below)*
-![DataCortex-AI SOTA System Architecture](visualizations/05_advanced_architecture_diagram.png)
+## 7. Working Principle of the Invention
 
-*(See Data Fingerprinting Feature Importance Tracking below)*
-![Data Fingerprinting: Feature Importance Validation](visualizations/04_sota_feature_importance.png)
+1. The system receives a tabular dataset and optional target column.
+2. The ingestion module parses the dataset, detects schema, assesses quality, performs conservative cleaning, and stores ingestion artifacts.
+3. The target-selection logic avoids unsafe target inference when the dataset resembles sparse market-basket item-slot data.
+4. The fingerprinting module computes a data fingerprint including shape, feature types, missingness, duplicates, correlations, target type, class balance, outliers, noise estimate, suggested task, suggested model families, and memory footprint.
+5. The planner uses the fingerprint and target-column state to construct an execution plan.
+6. The artifact registry stores phase outputs and supplies bounded upstream context to downstream agents.
+7. A data-integrity gate compares fingerprints across cleaning or transformation boundaries and emits anomaly artifacts or events.
+8. Generated code is parsed into an AST and rejected if prohibited imports, dynamic execution calls, network access, filesystem mutation, or dunder traversal patterns are found.
+9. The modeling module trains deterministic local candidates or configured sandbox candidates when supervised modeling is selected.
+10. The report module synthesizes schema, quality, cleaning, fingerprint, EDA, modeling, and recommendation artifacts into a report.
+11. The checkpoint manager serializes phase state and artifacts, while the event stream exposes live progress to the API or frontend.
+12. Validation scripts and demo runs produce reproducible local evidence.
 
-### 8. Experimental validation results:
-Formal evaluation was conducted across 7 Kaggle and UCI benchmark datasets comparing DataCortex-AI specifically against TPOT Genetic Evolutionary Agent pipelines. DataCortex converged at massive speed advantages.
+## 8. Detailed Description of the Invention
 
-| Dataset | Best DeepStacker Model Config | Cross-Validation Score |
-| :--- | :--- | :--- |
-| Iris | RandomForestClassifier | 0.9667 |
-| Airline Satisfaction | SOTA Super Node (LGBMClassifier) | 0.9600 |
-| Credit Risk | RandomForestClassifier | 0.9187 |
-| Churn | LGBMClassifier | 0.9140 |
-| **Hard Benchmark** (High Noise) | **DataCortex Meta-Learner (DeepStacker)** | **0.7273** *(Dominated SOTA)* |
+### 8.1 Data Fingerprint
 
-**Graphical Output Validating Convergence:**
-![Multi-Tier Benchmark Validation](visualizations/02_performance_benchmark_obliteration.png)
-![ROC/AUC Mathematical Superiority Proof](visualizations/03_roc_auc_analysis.png)
+The data fingerprint is a structured representation of the dataset. In the current implementation, it includes:
 
-### 9. What aspect(s) of the invention need(s) protection?
-1. **Claim 1:** The exact mathematical execution structure of using Data Fingerprinting (Dimensional Ratio mapping) to explicitly orchestrate LLM DAG instructions *without* algorithmic grid searching.
-2. **Claim 2:** The Agentic Reinforcement Learning strategy for dynamic `StackingClassifier` autonomous generation.
-3. **Claim 3:** The Multi-Judge AST cross-family interception matrix (Llama-Guard evaluating DeepSeek scripts strictly through AST block isolation methodologies).
+- Row count and column count.
+- Dimensionality ratio.
+- Numeric, categorical, temporal, and text-column counts.
+- High-cardinality and text-column indicators.
+- Sparsity and duplicate-row ratio.
+- Correlation density, maximum correlation, and feature redundancy.
+- Skewness, outlier ratio, and noise estimate.
+- Target type, class count, and class balance.
+- Suggested task and suggested model families.
+- Memory-use estimate.
 
-### 10. What is Technology readiness level of your invention? (Tick the appropriate TRL)
-*TRL 4* ✔️ 
+### 8.2 Fingerprint-Guided Planning
 
-**[✔️] TRL 4: Technology validated in a lab**
-> *Justification: The mathematical algorithms, agent flows, and AST safety block matrices have been definitively verified across controlled Kaggle/UCI datasets. Execution endpoints (NVIDIA NIM) and Cloud Sandboxes respond seamlessly under test loads.*
+The planner uses the fingerprint to decide whether to run EDA, supervised modeling, and reporting. If an explicit target column exists or the fingerprint indicates a supervised task, modeling is included. If the dataset is too small for reliable modeling, modeling can be skipped. If the dataset is detected as market-basket transaction data and no explicit target exists, the workflow runs basket profiling and reporting instead of classification or regression.
 
----
-----------------------END OF THE DOCUMENT-----------------------------
+### 8.3 Artifact Registry
+
+The registry stores artifacts by phase and artifact type. Examples include schema, data quality, cleaning logs, dataframe samples, data fingerprints, statistics, correlations, generated code, findings, model comparisons, model metrics, feature importance, execution logs, and reports. Downstream phases retrieve relevant upstream context through the registry rather than relying on informal shared state.
+
+### 8.4 Data-Integrity Protection
+
+A consistency validator compares fingerprints before and after a data mutation. It reports anomalies for:
+
+- Excessive row loss.
+- Sparsity spikes.
+- Statistical drift.
+- Target-type mutation.
+
+The system emits structured integrity events and stores integrity artifacts for reporting and audit.
+
+### 8.5 Code Safety Validation
+
+Generated Python code is parsed with the Python AST module. The current implementation rejects:
+
+- Prohibited modules including `os`, `subprocess`, `shutil`, `socket`, `requests`, `urllib`, `pickle`, `marshal`, `shelve`, and `pathlib`.
+- Prohibited builtins including `eval`, `exec`, `__import__`, `open`, `input`, `globals`, and `locals`.
+- Filesystem mutation methods including `unlink`, `remove`, `rmdir`, `rename`, `replace`, `write_text`, and `write_bytes`.
+- Dunder attribute traversal.
+
+### 8.6 Market-Basket-Aware Execution
+
+Sparse item-slot transaction tables are detected using column naming, object/category column ratio, missingness, and repeated-value ratio. When detected, the system:
+
+- Does not auto-select item columns as supervised targets.
+- Preserves duplicate rows because repeated baskets encode frequency.
+- Treats blank item slots as absent items.
+- Computes top item frequencies across item slots.
+- Skips supervised model training unless a target column is explicitly supplied.
+- Generates market-basket-specific methodology, limitations, and recommendations.
+
+### 8.7 Checkpointed and Observable Execution
+
+The checkpoint manager persists session status, phase status, current phase, execution plan, file name, target column, phase metrics, and serialized artifacts. The event stream emits phase and integrity events for user interfaces and monitoring clients.
+
+## 9. Experimental Validation Results
+
+Validation was executed locally with:
+
+```bash
+python -m pytest -q
+python scripts\validate_claims.py
+python scripts\run_demo.py --dataset <path-to-csv> --target <optional-target>
+```
+
+Current recorded results:
+
+- Automated tests: 74 passed.
+- Completed benchmark datasets in `VALIDATION_RESULTS.md`: 7.
+- Skipped datasets in `VALIDATION_RESULTS.md`: 1.
+- Task detection accuracy: 7/7 completed validation datasets.
+- Static code-safety scripted attack block rate: 100%.
+- Average best benchmark score: 0.904 across completed validation datasets.
+
+| Dataset | Task | Best Model / Analysis | Score / Result | Metric / Evidence | Integrity |
+| --- | --- | --- | ---: | --- | --- |
+| Iris | Classification | RandomForestClassifier | 0.9667 | Accuracy | Pass |
+| Churn | Classification | LGBMClassifier | 0.9140 | Accuracy | Pass |
+| Credit Risk | Classification | RandomForestClassifier | 0.9187 | Accuracy | Pass |
+| Housing | Regression | LinearRegression | 1.0000 | R2 | Pass |
+| Hard Benchmark | Classification | XGBClassifier | 0.7300 | Accuracy | Pass |
+| Titanic validation fixture | Classification | RandomForestClassifier | 0.8384 | Accuracy | Pass |
+| Airline Satisfaction | Classification | LGBMClassifier | 0.9600 | Accuracy | Pass |
+| Kaggle Titanic E2E | Classification | RandomForest | 0.8212 | Test accuracy; CV 0.8216 +/- 0.0203 | Pass |
+| Kaggle Groceries E2E | Market basket | Item-frequency profiling | 9,835/9,835 rows retained | 2,824 repeated baskets preserved | Pass |
+
+These results are local laboratory validation results. They do not assert production security certification, external state-of-the-art superiority, or legal protectability.
+
+`COMPREHENSIVE_RESULTS.md` adds stricter comparison framing:
+
+- Evidence quality is graded separately for regression tests, fixture benchmarks, Kaggle E2E demos, sanity baselines, and qualitative capability comparisons.
+- `COMPARATIVE_BENCHMARKS.md` adds executable same-fold comparisons across dummy, linear, tree, boosting, DataCortex fingerprint-selected, and broad local model-pool groups.
+- Dummy-baseline comparison uses deterministic most-frequent classification and mean-regression baselines; it is reported only as a sanity baseline.
+- Failure-mode validation maps concrete risks to artifacts, including market-basket target suppression, duplicate transaction preservation, AST code rejection, and checkpointed event visibility.
+- Capability comparison is mechanism-level only and is not presented as speed, accuracy, cost, reliability, or leaderboard evidence.
+
+## 10. Aspects of the Invention Requiring Protection
+
+1. Computing a data fingerprint and using it to select a bounded lifecycle execution plan before model training.
+2. Selecting model families from fingerprint metrics instead of relying only on brute-force pipeline search.
+3. Propagating phase-indexed artifacts between agents through a structured artifact registry.
+4. Comparing pre-mutation and post-mutation fingerprints to detect data-integrity anomalies.
+5. Validating generated code through deterministic AST inspection before execution.
+6. Detecting market-basket item-slot structure and suppressing unsafe supervised target inference.
+7. Preserving duplicate transaction rows as frequency signal in market-basket datasets.
+8. Combining fingerprint-guided planning, artifact propagation, code validation, checkpointing, event streaming, and report synthesis in a single automated data-science workflow.
+
+## 11. Concrete Novelty Evidence
+
+| Novelty | Why It Is Concrete | Repository Reference |
+| --- | --- | --- |
+| Fingerprint-guided execution control | The fingerprint is used to select task type, execution plan, and bounded model candidates before training. | `src/core/data_fingerprint.py`, `src/agents/planner.py`, `src/agents/modeling_agent.py` |
+| Phase-indexed artifact propagation | Each agent emits typed artifacts, and downstream agents retrieve context through registry APIs. | `src/core/artifact_registry.py`, `src/agents/report_agent.py` |
+| Fingerprint consistency gate | The system computes anomalies from pre-mutation and post-mutation fingerprint differences. | `src/core/data_fingerprint.py`, `src/agents/planner.py` |
+| Deterministic AST safety validation | Generated code is parsed and rejected on prohibited syntax or API usage before execution. | `src/core/sandbox_executor.py`, `tests/test_code_validator.py` |
+| Market-basket target suppression | Sparse item-slot transaction data does not auto-select an item column as a supervised target. | `src/agents/ingestion_agent.py`, `tests/test_ingestion_target_detection.py` |
+| Duplicate transaction preservation | Exact duplicate basket rows are retained when they represent transaction frequency. | Kaggle Groceries E2E evidence in `demo_outputs/kaggle_groceries_iter4/` |
+| Observable long-running execution | Phase, integrity, plan, and completion events are emitted and persisted. | `src/agents/planner.py`, `demo_outputs/*/demo_events.json` |
+| Fingerprint-bounded candidate budget | The data fingerprint narrows the model set before training while retaining near-broad-pool scores on the local comparison harness. | `scripts/run_comparative_benchmarks.py`, `COMPARATIVE_BENCHMARKS.md` |
+
+Attachment bundle:
+
+- `VALIDATION_APPENDIX.md`
+- `CLAIM_CHART.md`
+- `COMPREHENSIVE_RESULTS.md`
+- `COMPARATIVE_BENCHMARKS.md`
+- `disclosure_artifacts/evidence_manifest.json`
+- `disclosure_artifacts/figures/figure_1_architecture.svg`
+- `disclosure_artifacts/figures/figure_2_claim_flow.svg`
+- `disclosure_artifacts/figures/figure_3_market_basket_branch.svg`
+- `disclosure_artifacts/figures/figure_4_validation_benchmark_scores.png`
+- `disclosure_artifacts/figures/figure_5_baseline_comparison.png`
+- `disclosure_artifacts/figures/figure_6_capability_comparison.png`
+- `disclosure_artifacts/figures/figure_7_failure_mode_coverage.png`
+- `disclosure_artifacts/figures/figure_8_executable_model_comparison.png`
+- `disclosure_artifacts/benchmarks/validation_benchmarks.json`
+- `disclosure_artifacts/benchmarks/validation_benchmarks.csv`
+- `disclosure_artifacts/benchmarks/kaggle_e2e_results.json`
+- `disclosure_artifacts/benchmarks/baseline_comparison.csv`
+- `disclosure_artifacts/benchmarks/capability_comparison.csv`
+- `disclosure_artifacts/benchmarks/failure_mode_validation.csv`
+- `disclosure_artifacts/benchmarks/evidence_quality_grading.csv`
+- `disclosure_artifacts/benchmarks/comparative_benchmarks_summary.csv`
+- `disclosure_artifacts/benchmarks/comparative_benchmarks_long.csv`
+- `disclosure_artifacts/benchmarks/novelty_mechanisms.csv`
+
+## 12. Proposed Independent Claim Themes
+
+The draft has been condensed to six claims:
+
+1. A broad method claim directed to fingerprint-guided execution planning, artifact propagation, integrity gating, AST validation, and lifecycle execution.
+2. A dependent method claim directed to expanded fingerprint fields and model-family modification.
+3. A dependent method claim directed to AST rejection categories.
+4. A dependent method claim directed to market-basket routing, duplicate preservation, and item-frequency summaries.
+5. A system claim directed to modules for ingestion, fingerprinting, planning, artifact registry, integrity checking, code validation, modeling, market-basket detection, and reporting.
+6. A computer-readable-medium claim directed to stored instructions for performing the fingerprint-guided workflow, checkpointing, event emission, and report generation.
+
+## 13. Technology Readiness Level
+
+**TRL 4: Technology validated in a laboratory environment.**
+
+Justification:
+
+- Core Python modules are implemented.
+- Automated unit and regression tests pass locally.
+- Local validation runs over repository fixtures and available benchmark CSVs.
+- Kaggle E2E demo runs were completed for supervised classification and market-basket analysis.
+- The validation report documents completed and skipped datasets.
+- Production deployment, formal security certification, and independent benchmark comparison remain future work.
+
+## 14. Inventor / Applicant Notes
+
+The current repository contains implementation code, tests, validation scripts, validation results, diagrams, demo outputs, and documentation sufficient for technical review and technical drafting refinement. Final formal filing should be reviewed by a qualified qualified professional before submission.

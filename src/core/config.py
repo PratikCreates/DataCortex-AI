@@ -185,6 +185,8 @@ class AppSettings:
     checkpoint_enabled: bool = True
     streaming_enabled: bool = True
     max_file_size_mb: int = 100
+    enable_remote_llm: bool = os.getenv("DATACORTEX_ENABLE_REMOTE_LLM", "0").lower() in {"1", "true", "yes"}
+    enable_remote_sandbox: bool = os.getenv("DATACORTEX_ENABLE_REMOTE_SANDBOX", "0").lower() in {"1", "true", "yes"}
 
 
 # ─────────────────────────────────────────────────────
@@ -212,9 +214,9 @@ class Config:
         cls._instance = None
 
     def _load_credential_pool(self) -> CredentialPool:
-        """Load Blaxel accounts 2, 3, 4 from environment."""
+        """Load all configured Blaxel accounts from environment."""
         pool = CredentialPool()
-        for key_id in [2, 3, 4]:
+        for key_id in range(1, 10):
             api_key = os.getenv(f"BLAXEL_ACCOUNT_{key_id}_API_KEY", "")
             budget = float(os.getenv(f"BLAXEL_ACCOUNT_{key_id}_BUDGET", "0"))
             workspace = os.getenv(f"BLAXEL_ACCOUNT_{key_id}_WORKSPACE_NAME", "")

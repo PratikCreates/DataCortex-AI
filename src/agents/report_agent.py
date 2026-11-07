@@ -49,7 +49,7 @@ class ReportAgent:
 
         # Get specific artifacts for structured sections
         schema = registry.get_latest(Phase.INGESTION.value, ArtifactType.SCHEMA.value)
-        quality = registry.get_latest(Phase.INGESTION.value, ArtifactType.DATA_QUALITY.value)
+        quality = self._get_quality_assessment(registry)
         fingerprint = registry.get_latest(Phase.INGESTION.value, ArtifactType.DATA_FINGERPRINT.value)
         cleaning_log = registry.get_latest(Phase.INGESTION.value, ArtifactType.CLEANING_LOG.value)
         statistics = registry.get_latest(Phase.EDA.value, ArtifactType.STATISTICS.value)
@@ -87,7 +87,7 @@ class ReportAgent:
         report_sections.append(dist_section)
 
         # 7. Modeling Results
-        model_section = self._generate_model_section(model_comparison, model_metrics, feature_imp)
+        model_section = self._generate_model_section(model_comparison, model_metrics, feature_imp, fingerprint)
         report_sections.append(model_section)
 
         # 8. Limitations & Caveats
@@ -123,18 +123,30 @@ class ReportAgent:
 
     # ─── Section Generators ──────────────────────────
 
+    def _get_quality_assessment(self, registry: ArtifactRegistry):
+        """Return the ingestion quality artifact, not the downstream full-CSV carrier."""
+        quality_artifacts = registry.query(Phase.INGESTION.value, ArtifactType.DATA_QUALITY.value)
+        for artifact in reversed(quality_artifacts):
+            if isinstance(artifact.data, dict) and "overall_score" in artifact.data:
+                return artifact
+        return quality_artifacts[-1] if quality_artifacts else None
+
     def _generate_header(self, file_name, user_query, schema, fingerprint) -> str:
         """Generate report title and metadata block."""
         s = schema.data if schema else {}
         fp = fingerprint.data if fingerprint else {}
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        analyzed_shape = "N/A"
+        if fp:
+            analyzed_shape = f"{fp.get('n_rows', 'N/A')} x {fp.get('n_cols', 'N/A')}"
         return f"""# DatacortexAI Analysis Report
 
 | Property | Value |
 |----------|-------|
 | **Dataset** | `{file_name}` |
 | **Generated** | {timestamp} |
-| **Rows x Columns** | {s.get('n_rows', 'N/A')} x {s.get('n_cols', 'N/A')} |
+| **Raw Rows x Columns** | {s.get('n_rows', 'N/A')} x {s.get('n_cols', 'N/A')} |
+| **Analyzed Rows x Columns** | {analyzed_shape} |
 | **Detected Task** | {fp.get('suggested_task', 'N/A')} |
 | **Analysis Query** | {user_query or 'Full automated analysis'} |
 | **Platform** | DatacortexAI v0.1 — AI-Orchestrated Data Science |
@@ -151,6 +163,8 @@ class ReportAgent:
 
         # Try LLM narrative
         try:
+            if not getattr(self.llm, "has_provider_credentials", False):
+                raise RuntimeError("remote LLM narrative disabled")
             prompt = f"""Write a concise executive summary (2-3 paragraphs) for a data analysis report.
 File analyzed: {file_name}
 User's question: {user_query or 'General analysis'}
@@ -186,10 +200,16 @@ Write in professional language. No markdown headers. No emojis."""
                     f"**{best_score:.4f}**, selected from a pool of {len(models)} candidate algorithms "
                     f"({', '.join(models[:3])}) chosen via adaptive fingerprint-based model selection."
                 )
-            narrative += (
-                "\n\nThe following sections detail each phase of the analysis, from data ingestion "
-                "through model evaluation, concluding with actionable recommendations."
-            )
+            if task == "market_basket":
+                narrative += (
+                    "\n\nThe following sections detail the transaction-oriented analysis, including "
+                    "data ingestion, basket profiling, item-frequency findings, limitations, and recommendations."
+                )
+            else:
+                narrative += (
+                    "\n\nThe following sections detail each phase of the analysis, from data ingestion "
+                    "through model evaluation, concluding with actionable recommendations."
+                )
 
         return f"## Executive Summary\n\n{narrative}"
 
@@ -198,6 +218,21 @@ Write in professional language. No markdown headers. No emojis."""
         fp = fingerprint.data if fingerprint else {}
         task = fp.get('suggested_task', 'analysis')
         models = fp.get('suggested_models', ['N/A'])
+
+        if task == "market_basket":
+            return """## Methodology
+
+The analysis follows a transaction-oriented market-basket pipeline:
+
+1. **Data Ingestion** - File parsing, schema detection, data quality assessment, and conservative cleaning while preserving repeated transactions.
+
+2. **Data Fingerprinting** - Identification of sparse item-slot columns where blank cells represent absent basket items rather than conventional missing values.
+
+3. **Exploratory Basket Analysis** - Frequency analysis across item slots, basket-size profiling, and item distribution summaries.
+
+4. **Report Synthesis** - Aggregation of basket artifacts into this structured analytical narrative.
+
+No supervised model training was run because no explicit target column was supplied and the dataset was detected as market-basket transaction data."""
 
         return f"""## Methodology
 
@@ -309,6 +344,16 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
             if fd.get("data_story"):
                 sections.append(f"### Narrative Summary\n\n{fd['data_story']}\n")
 
+            top_items = fd.get("market_basket", {}).get("top_items", [])
+            if top_items:
+                sections.append("### Top Basket Items\n")
+                sections.append("| Rank | Item | Count |")
+                sections.append("|------|------|-------|")
+                for rank, item in enumerate(top_items[:15], 1):
+                    name, count = item
+                    sections.append(f"| {rank} | {name} | {count:,} |")
+                sections.append("")
+
             key_findings = fd.get("key_findings", [])
             if key_findings:
                 sections.append("### Key Findings\n")
@@ -416,7 +461,7 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
 
         return "\n".join(sections)
 
-    def _generate_model_section(self, model_comparison, model_metrics, feature_imp) -> str:
+    def _generate_model_section(self, model_comparison, model_metrics, feature_imp, fingerprint=None) -> str:
         """Generate the modeling results section."""
         sections = ["## Modeling Results\n"]
 
@@ -447,8 +492,11 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
                     second = models[1] if len(models) > 1 else None
                     if not best.get("error") and best.get("test_score", 0) > 0:
                         gap = best.get("test_score", 0) - (second.get("test_score", 0) if second and not second.get("error") else 0)
-                        sections.append(f"**Analysis**: {best['name']} outperforms the runner-up by "
-                                       f"{gap:.4f} on the test set. ")
+                        if abs(gap) <= 0.0001:
+                            sections.append(f"**Analysis**: {best['name']} tied the runner-up on the test set. ")
+                        else:
+                            sections.append(f"**Analysis**: {best['name']} outperforms the runner-up by "
+                                           f"{gap:.4f} on the test set. ")
                         cv_std = best.get("cv_std", 0)
                         if cv_std > 0.1:
                             sections.append(f"However, the cross-validation standard deviation ({cv_std:.4f}) "
@@ -479,7 +527,15 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
 
         if (not model_comparison or not model_comparison.data or not model_comparison.data.get("models")) and \
            (not model_metrics or not model_metrics.data or not model_metrics.data.get("best_model")):
-            sections.append("*No model training was performed for this dataset (insufficient data or no target column specified).*\n")
+            fp = fingerprint.data if fingerprint else {}
+            if fp.get("suggested_task") == "market_basket":
+                sections.append(
+                    "*No supervised model training was performed. This dataset was detected as "
+                    "market-basket transaction data without an explicit target column, so the pipeline "
+                    "ran basket profiling instead of classification or regression.*\n"
+                )
+            else:
+                sections.append("*No model training was performed for this dataset (insufficient data or no target column specified).*\n")
 
         return "\n".join(sections)
 
@@ -498,14 +554,18 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
                         "Treat all findings as preliminary hypotheses requiring validation.")
 
         q = quality.data if quality else {}
+        fp = fingerprint.data if fingerprint else {}
+        is_market_basket = fp.get("suggested_task") == "market_basket"
         missing_pct = q.get('missing_pct', 0)
-        if missing_pct > 5:
+        if missing_pct > 5 and is_market_basket:
+            items.append(f"**Sparse item slots** ({missing_pct:.1f}% blank cells): Blank item slots were treated "
+                        f"as absent basket items, not values to impute.")
+        elif missing_pct > 5:
             items.append(f"**Missing data** ({missing_pct:.1f}%): Imputation was applied but may "
                         f"introduce bias, particularly if data is not missing at random.")
 
-        fp = fingerprint.data if fingerprint else {}
         noise = fp.get('noise_estimate', 0)
-        if noise > 0.3:
+        if noise > 0.3 and not is_market_basket:
             items.append(f"**High noise estimate** ({noise:.3f}): The dataset exhibits substantial noise, "
                         f"which may limit achievable model accuracy.")
 
@@ -517,8 +577,11 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
 
         items.append("**Automated analysis**: This report was generated algorithmically. "
                     "Domain expert review is recommended before acting on findings.")
-        items.append("**No causal claims**: Correlations identified do not imply causation. "
-                    "Experimental or quasi-experimental designs are needed for causal inference.")
+        if is_market_basket:
+            items.append("**No causal claims**: Item co-occurrence and support do not prove that one item causes another purchase.")
+        else:
+            items.append("**No causal claims**: Correlations identified do not imply causation. "
+                        "Experimental or quasi-experimental designs are needed for causal inference.")
 
         for item in items:
             sections.append(f"- {item}")
@@ -531,6 +594,8 @@ The analysis follows a structured five-phase pipeline orchestrated by the Dataco
     ) -> str:
         """Generate recommendations — LLM with template fallback."""
         try:
+            if not getattr(self.llm, "has_provider_credentials", False):
+                raise RuntimeError("remote LLM recommendations disabled")
             prompt = f"""Based on this data analysis, generate 5-7 specific, actionable recommendations.
 Context: {upstream_context[:3000]}
 Question: {user_query or 'General analysis'}
@@ -546,6 +611,16 @@ Use numbered list. No headers. No emojis. Professional language."""
             fd = findings.data if findings else {}
 
             recs = []
+            if fp.get("suggested_task") == "market_basket":
+                recs.extend([
+                    "1. **Preserve transaction duplicates** because repeated baskets represent demand frequency.",
+                    "1. **Compute association rules** using support, confidence, and lift to identify useful item bundles.",
+                    "1. **Treat blank item slots as absent items**, not values that should be statistically imputed.",
+                    "1. **Prioritize top-frequency and high-lift item pairs** for merchandising or recommendation experiments.",
+                    "1. **Validate recommendations on a later transaction window** before using them operationally.",
+                ])
+                recs_text = "\n".join(recs)
+                return f"## Recommendations\n\n{recs_text}"
             # Data quality
             recs.append("1. **Data collection**: Increase sample size to improve model stability and statistical power. "
                        "Target at least 500-1000 observations for reliable results.")
@@ -573,19 +648,26 @@ Use numbered list. No headers. No emojis. Professional language."""
     def _generate_appendix(self, schema, correlations, fingerprint) -> str:
         """Generate technical appendix with raw details."""
         sections = ["## Technical Appendix\n"]
+        fp = fingerprint.data if fingerprint else {}
 
         sections.append("### Pipeline Configuration\n")
         sections.append("| Parameter | Value |")
         sections.append("|-----------|-------|")
-        sections.append("| Train/Test Split | 80/20, stratified |")
-        sections.append("| Cross-Validation | k-fold (k=5 or adjusted for small data) |")
-        sections.append("| Feature Scaling | StandardScaler (zero mean, unit variance) |")
-        sections.append("| Missing Value Strategy | Median imputation |")
-        sections.append("| Categorical Encoding | Label encoding |")
+        if fp.get("suggested_task") == "market_basket":
+            sections.append("| Analysis Mode | Market-basket profiling |")
+            sections.append("| Supervised Target | Not supplied / not inferred |")
+            sections.append("| Duplicate Transaction Handling | Preserved as frequency signal |")
+            sections.append("| Blank Item Slots | Treated as absent items |")
+            sections.append("| Primary Measures | Item support and frequency ranking |")
+        else:
+            sections.append("| Train/Test Split | 80/20, stratified |")
+            sections.append("| Cross-Validation | k-fold (k=5 or adjusted for small data) |")
+            sections.append("| Feature Scaling | StandardScaler (zero mean, unit variance) |")
+            sections.append("| Missing Value Strategy | Median imputation |")
+            sections.append("| Categorical Encoding | Label encoding |")
         sections.append("")
 
-        if fingerprint and fingerprint.data:
-            fp = fingerprint.data
+        if fp:
             sections.append("### Raw Fingerprint Vector\n")
             sections.append("```")
             for key, val in fp.items():
@@ -594,6 +676,6 @@ Use numbered list. No headers. No emojis. Professional language."""
             sections.append("```\n")
 
         sections.append("---\n")
-        sections.append("*Report generated by DatacortexAI — Enterprise Data Science Platform.*")
+        sections.append("*Report generated by DataCortex-AI automated analysis prototype.*")
 
         return "\n".join(sections)

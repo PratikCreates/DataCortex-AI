@@ -76,6 +76,12 @@ class LLMClient:
             },
         )
 
+    @property
+    def has_provider_credentials(self) -> bool:
+        """True when at least one remote LLM provider key is configured."""
+        inf = self.config.inference
+        return bool(self.config.settings.enable_remote_llm and (inf.nvidia_api_key or inf.openrouter_api_keys))
+
     def _rotate_key(self):
         """Rotate to next OpenRouter key and rebuild client."""
         old_key = self.config.inference.openrouter_api_key[-8:]

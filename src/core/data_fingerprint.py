@@ -137,10 +137,10 @@ class DataFingerprinter:
             corr_matrix = numeric_df.corr().abs()
             mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
             upper = corr_matrix.where(mask)
-            corr_values = upper.stack().values
+            corr_values = upper.stack().dropna().values
             if len(corr_values) > 0:
-                fp.correlation_density = float(np.nanmean(corr_values))
-                fp.max_correlation = float(np.nanmax(corr_values))
+                fp.correlation_density = float(np.mean(corr_values))
+                fp.max_correlation = float(np.max(corr_values))
                 fp.feature_redundancy = float(
                     np.sum(corr_values > 0.9) / max(len(corr_values), 1)
                 )
@@ -165,7 +165,10 @@ class DataFingerprinter:
             unique_count = target.nunique()
 
             if target.dtype in [np.float64, np.float32, np.int64, np.int32]:
-                if unique_count <= 20 and unique_count / max(fp.n_rows, 1) < 0.05:
+                if unique_count <= 2:
+                    fp.target_type = "binary"
+                    fp.n_classes = unique_count
+                elif pd.api.types.is_integer_dtype(target) and unique_count <= min(20, max(3, int(fp.n_rows * 0.2))):
                     fp.target_type = "binary" if unique_count == 2 else "multiclass"
                     fp.n_classes = unique_count
                 else:
@@ -182,10 +185,32 @@ class DataFingerprinter:
                 max_entropy = np.log2(max(unique_count, 2))
                 fp.class_balance = float(entropy / max(max_entropy, 1e-10))
 
+        if target_col is None and self._looks_like_market_basket(df):
+            fp.suggested_task = "market_basket"
+            fp.suggested_models = ["ItemFrequency", "PairFrequency", "AssociationRules"]
+            return fp
+
         # ─── Task Suggestion ──────────────────────────
         fp.suggested_task, fp.suggested_models = self._suggest_task_and_models(fp, target_col)
 
         return fp
+
+    def _looks_like_market_basket(self, df: pd.DataFrame) -> bool:
+        """Detect item-slot transaction tables where nulls mean absent items."""
+        if df.empty or len(df.columns) < 4:
+            return False
+        item_slot_names = sum(
+            str(col).lower().startswith("item") for col in df.columns
+        ) / max(len(df.columns), 1)
+        object_cols = df.select_dtypes(include=["object", "category"]).columns
+        object_ratio = len(object_cols) / max(len(df.columns), 1)
+        if object_ratio < 0.5 and item_slot_names < 0.5:
+            return False
+        missing_ratio = df[object_cols].isna().mean().mean()
+        repeated_value_ratio = sum(
+            df[col].nunique(dropna=True) < len(df) * 0.25 for col in object_cols
+        ) / max(len(object_cols), 1)
+        return missing_ratio > 0.2 and (repeated_value_ratio >= 0.5 or item_slot_names >= 0.5)
 
     def validate_consistency(
         self,
@@ -252,7 +277,7 @@ class DataFingerprinter:
 
         if fp.target_type == "continuous":
             task = "regression"
-            models = ["LinearRegression", "Ridge", "RandomForestRegressor"]
+            models = ["LinearRegression", "Ridge", "RandomForestRegressor", "HistGradientBoostingRegressor"]
 
             if fp.n_rows > 10000:
                 models.append("GradientBoostingRegressor")
@@ -265,7 +290,7 @@ class DataFingerprinter:
 
         else:
             task = "classification"
-            models = ["LogisticRegression", "RandomForestClassifier"]
+            models = ["LogisticRegression", "RandomForestClassifier", "HistGradientBoostingClassifier"]
 
             if fp.n_classes > 5:
                 models.append("GradientBoostingClassifier")
@@ -273,7 +298,12 @@ class DataFingerprinter:
                 models.append("XGBClassifier")
             if fp.class_balance < 0.7:
                 # Imbalanced: prefer models with class_weight support
-                models = ["RandomForestClassifier", "GradientBoostingClassifier", "LogisticRegression"]
+                models = [
+                    "RandomForestClassifier",
+                    "HistGradientBoostingClassifier",
+                    "GradientBoostingClassifier",
+                    "LogisticRegression",
+                ]
             if fp.dimensionality_ratio > 0.1:
                 models.insert(0, "SVC")  # Good for high-dimensional
             if fp.n_numeric > 0 and fp.n_categorical == 0:

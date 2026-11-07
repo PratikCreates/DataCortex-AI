@@ -255,15 +255,42 @@ class EDAAgent:
                     "category": "pattern",
                 })
 
+        market_basket = {}
+        if fingerprint and fingerprint.suggested_task == "market_basket":
+            top_items = self._compute_market_basket_items(df)
+            market_basket = {"top_items": top_items[:20]}
+            if top_items:
+                leaders = ", ".join(f"{item} ({count})" for item, count in top_items[:5])
+                findings.append({
+                    "finding": f"Top basket items by frequency: {leaders}",
+                    "importance": "high",
+                    "category": "pattern",
+                })
+
         return {
             "key_findings": findings,
-            "recommendations": self._generate_recommendations(df, stats, correlations, target_column),
+            "recommendations": self._generate_recommendations(df, stats, correlations, target_column, fingerprint),
             "data_story": self._generate_data_story(df, findings, fingerprint, target_column),
+            "market_basket": market_basket,
         }
 
-    def _generate_recommendations(self, df, stats, correlations, target_column):
+    def _compute_market_basket_items(self, df: pd.DataFrame) -> list[tuple[str, int]]:
+        values = []
+        for col in df.select_dtypes(include=["object", "category"]).columns:
+            values.extend(df[col].dropna().astype(str).tolist())
+        if not values:
+            return []
+        counts = pd.Series(values).value_counts()
+        return [(str(k), int(v)) for k, v in counts.items()]
+
+    def _generate_recommendations(self, df, stats, correlations, target_column, fingerprint=None):
         """Generate recommendations from statistics without LLM."""
         recs = []
+        if fingerprint and fingerprint.suggested_task == "market_basket":
+            recs.append("Preserve repeated transactions; they carry basket frequency signal.")
+            recs.append("Use item support, pair support, confidence, and lift for market-basket recommendations.")
+            recs.append("Treat blank item slots as absent items, not missing values requiring imputation.")
+            return recs
         total_missing = int(df.isnull().sum().sum())
         if total_missing > 0:
             recs.append("Consider imputing missing values or dropping columns with >50% nulls")
@@ -351,6 +378,9 @@ if '{target_column}' in df.columns:
         df_info: dict, fingerprint, target_column,
     ) -> dict:
         """Optionally enhance findings with LLM narrative. Non-blocking."""
+        if not getattr(self.llm, "has_provider_credentials", False):
+            return findings
+
         try:
             prompt = f"""Summarize this data analysis in 2-3 sentences:
 Findings: {json.dumps(findings.get('key_findings', [])[:5], default=str)}

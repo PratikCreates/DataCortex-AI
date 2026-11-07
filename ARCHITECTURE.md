@@ -19,13 +19,13 @@ The architecture relies on a highly modular, decoupled agentic swarm governed by
 *   **Modeling Agent (DeepSeek-V3.2 + Scikit/XGB/LGBM)**: The core predictive engine. Uses the fingerprint to bypass brute-force testing. Employs 3 iterations of **Agentic Reinforcement Learning**, scaling up to deep Stacking Classifiers and Bayesian Optuna optimization.
 *   **Report Agent (Llama 3.3 70B)**: Synthesizes findings across the `ArtifactRegistry` into highly readable, executive-level documentation.
 
-### 2.2 Safety & Governance (Patent Claim 3)
+### 2.2 Safety & Governance (technical claim 3)
 *   **Multi-Judge Isolation Validation**: Before the system executes code dynamically within the Sandbox, an independent **Guardian Agent** (Llama-Guard-4) isolated from the primary LLM family reviews the AST syntax.
 *   **Hard-Coded Sandboxing**: Deterministic Python AST parsing strictly blocks networking libraries (`socket`, `requests`), filesystem traversal (`os`, `shutil`), and runtime injection (`eval`, `exec`).
 
 ---
 
-## 3. Advanced Meta-Learning Modeling (Patent Claim 4)
+## 3. Advanced Meta-Learning Modeling (technical claim 4)
 
 DataCortex-AI surpasses traditional autoML frameworks through iterative Agentic Reinforcement Learning.
 

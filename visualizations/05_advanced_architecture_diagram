@@ -1,0 +1,74 @@
+// DataCortex-AI SOTA Architecture
+digraph DataCortexAI {
+	bgcolor="#FAFBFC" compound=true dpi=300 fontname=Helvetica nodesep=0.8 pad=0.4 rankdir=TB ranksep=0.8 splines=ortho
+	node [fontname=Helvetica fontsize=10 margin="0.3,0.2" penwidth=2 shape=box style="filled,rounded"]
+	edge [arrowsize=0.7 fontname=Helvetica fontsize=9 penwidth=2]
+	title [label="DataCortex-AI
+Autonomous Meta-Learning System" fontcolor="#1A202C" fontname="Helvetica-Bold" fontsize=16 shape=plaintext]
+	User [label="👤
+Data Scientist
+(User Intent)" color="#5A67D8" fillcolor="#667EEA" fontcolor=white fontsize=11 height=1.2 penwidth=2.5 shape=ellipse style=filled width=1.2]
+	subgraph cluster_planning {
+		color="#4299E1" fillcolor="#EBF8FF" fontcolor="#2C5282" fontsize=11 label="Meta-Cognitive Planning (Kimi-K2-Thinking)" labeljust=c margin=16 penwidth=2.5 style="filled,rounded"
+		Ingest [label="📊 Ingestion Agent
+Data Cleanse
+Type Inference" color="#3182CE" fillcolor="#BEE3F8" fontcolor="#1A365D"]
+		Fingerprint [label="🧬 Data Fingerprint
+Sparsity & Noise Metrics
+Dimensionality Ratios" color="#2B6CB0" fillcolor="#90CDF4" fontcolor="#1A365D" shape=note]
+		DAG [label="⚙️ DAG Orchestrator
+Dynamic Route Planning
+Task Allocation" color="#2C5282" fillcolor="#63B3ED" fontcolor="#1A365D"]
+	}
+	subgraph cluster_backend {
+		color="#9F7AEA" fillcolor="#FAF5FF" fontcolor="#553C9A" fontsize=12 label="🏢 Multi-Agent Execution (DeepSeek-V3.2)" labeljust=c margin=20 penwidth=3 style="filled,rounded"
+		EDA [label="📈 EDA Processor
+Direct Pandas Compute
+Correlation Clustering" color="#805AD5" fillcolor="#E9D8FD" fontcolor="#44337A"]
+		Modeler [label="🧠 Modeling Agent
+RL Iteration Management
+Feature Engineering" color="#6B46C1" fillcolor="#D6BCFA" fontcolor="#322659" height=1.3 penwidth=3 width=3.2]
+		Omega [label="🚀 DataCortex-Omega
+Meta-Stack Super-Ensemble
+(CatBoost + LGBM + XGB + RF)" color="#D53F8C" fillcolor="#ED64A6" fontcolor="#521B41" height=1.3 penwidth=3 width=3.5]
+	}
+	subgraph cluster_safety {
+		color="#ED8936" fillcolor="#FFFAF0" fontcolor="#9C4221" fontsize=12 label="🛡️ Multi-Judge Isolation Architecture" labeljust=c margin=16 penwidth=2.5 style="filled,rounded"
+		Guardian [label="👁️ Guardian Agent
+(Llama-Guard 4)
+Cross-Family Validation
+Security Governance" color="#F6E05E" fillcolor="#FEF089" fontcolor="#744210" penwidth=2 shape=hexagon style="filled,rounded"]
+		AST [label="🔍 AST Parser
+Abstract Syntax Tree Intercept
+Block Eval/Network Modules" color="#DD6B20" fillcolor="#FBD38D" fontcolor="#7C2D12"]
+	}
+	subgraph cluster_sandbox {
+		color="#48BB78" fillcolor="#F0FFF4" fontcolor="#276749" fontsize=11 label="☁️ Cloud Sandbox Execution" labeljust=c margin=16 penwidth=2.5 style="filled,rounded"
+		Sandbox [label="⚙️ Blaxel Docker Engine
+Isolated System Compute
+Zero-Trust Environment" color="#38A169" fillcolor="#C6F6D5" fontcolor="#22543D" height=1.6 width=2.8]
+		Optuna [label="⚙️ Optuna Server
+Bayesian HPO Trials
+Hyperparameter Tuning" color="#68D391" fillcolor="#9AE6B4" fontcolor="#22543D"]
+	}
+	title -> User [style=invis]
+	User -> Ingest [color="#667EEA" fontcolor="#5A67D8" penwidth=2.5 xlabel="Dataset & Task"]
+	Ingest -> Fingerprint [color="#4299E1" penwidth=2]
+	Fingerprint -> DAG [color="#4299E1" penwidth=2]
+	DAG -> EDA [color="#805AD5" fontcolor="#553C9A" penwidth=2.5 xlabel=Launch]
+	DAG -> Modeler [color="#805AD5" fontcolor="#553C9A" penwidth=2.5 xlabel=Launch]
+	Modeler -> Omega [color="#D53F8C" penwidth=3 style=dashed xlabel="RL Feedback Iter 3"]
+	Omega -> Guardian [color="#E53E3E" fontcolor="#9B2C2C" penwidth=2.5 xlabel="Proposed Code"]
+	EDA -> Guardian [color="#E53E3E" fontcolor="#9B2C2C" penwidth=2.5]
+	Guardian -> AST [color="#DD6B20" dir=both penwidth=2]
+	Guardian -> Sandbox [color="#38A169" fontcolor="#276749" penwidth=3 xlabel="Approved Code"]
+	Guardian -> Modeler [color="#E53E3E" fontcolor="#9B2C2C" penwidth=2 style=dashed xlabel="Safety Reject"]
+	Sandbox -> Optuna [color="#38A169" dir=both penwidth=2]
+	Sandbox -> DAG [color="#38A169" fontcolor="#276749" penwidth=2.5 xlabel="Result JSON"]
+	innovation1 [label="💡 Patent Claim 1
+Fingerprint-Guided Planning without Brute Force" color="#FC8181" fillcolor="#FFF5F5" fontcolor="#742A2A" fontsize=9 shape=note style=filled]
+	innovation2 [label="💡 Patent Claim 4
+Meta-Stack Agentic RL scaling to XGBoost/CatBoost" color="#F6E05E" fillcolor="#FFFFF0" fontcolor="#744210" fontsize=9 shape=note style=filled]
+	DAG -> innovation1 [style=invis]
+	Omega -> innovation2 [style=invis]
+}

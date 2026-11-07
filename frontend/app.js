@@ -1,5 +1,5 @@
-/**
- * DatacortexAI — Frontend Application
+﻿/**
+ * DataCortex-AI - Frontend Application
  *
  * Client-side logic for file upload, WebSocket connection,
  * pipeline DAG visualization, and report rendering.
@@ -8,7 +8,7 @@
 (() => {
   'use strict';
 
-  // ─── State ──────────────────────────────────────
+  // â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const state = {
     sessionId: null,
     file: null,
@@ -18,7 +18,7 @@
     reportMarkdown: '',
   };
 
-  // ─── Elements ───────────────────────────────────
+  // â”€â”€â”€ Elements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const $ = (id) => document.getElementById(id);
   const uploadZone = $('upload-zone');
   const fileInput = $('file-input');
@@ -39,7 +39,7 @@
   const headerStatus = $('header-status-text');
   const summaryGrid = $('summary-grid');
 
-  // ─── Upload Handling ────────────────────────────
+  // â”€â”€â”€ Upload Handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   uploadZone.addEventListener('click', () => fileInput.click());
 
   uploadZone.addEventListener('dragover', (e) => {
@@ -71,16 +71,16 @@
     fileSize.textContent = formatSize(file.size);
     uploadZone.classList.add('hidden');
     configPanel.classList.add('visible');
-    headerStatus.textContent = 'File loaded — configure analysis';
+    headerStatus.textContent = 'File loaded - configure analysis';
   }
 
-  // ─── Analysis Launch ────────────────────────────
+  // â”€â”€â”€ Analysis Launch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   btnAnalyze.addEventListener('click', async () => {
     if (!state.file) return;
 
     btnAnalyze.disabled = true;
-    btnAnalyze.textContent = '⏳ Starting pipeline…';
-    headerStatus.textContent = 'Launching pipeline…';
+    btnAnalyze.textContent = 'Starting pipeline...';
+    headerStatus.textContent = 'Launching pipeline...';
 
     const formData = new FormData();
     formData.append('file', state.file);
@@ -105,8 +105,8 @@
 
       // Optimistic: show ingestion as about to start
       setDAGNodeState('ingestion', 'running');
-      addLog('Pipeline started — connecting to live stream…', 'phase-start');
-      headerStatus.textContent = 'Pipeline running — ingestion';
+      addLog('Pipeline started - connecting to live stream...', 'phase-start');
+      headerStatus.textContent = 'Pipeline running - ingestion';
 
       // Connect WebSocket for real-time events
       connectWebSocket(data.session_id);
@@ -116,13 +116,13 @@
 
     } catch (err) {
       btnAnalyze.disabled = false;
-      btnAnalyze.textContent = '🚀 Launch DatacortexAI Analysis';
+      btnAnalyze.textContent = 'Execute Pipeline';
       addLog(`Error: ${err.message}`, 'error');
-      headerStatus.textContent = 'Error — try again';
+      headerStatus.textContent = 'Error - try again';
     }
   });
 
-  // ─── Polling Fallback ──────────────────────────
+  // â”€â”€â”€ Polling Fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function startPolling(sessionId) {
     state.pollInterval = setInterval(async () => {
       try {
@@ -144,7 +144,7 @@
     }, 3000);
   }
 
-  // ─── WebSocket Connection ───────────────────────
+  // â”€â”€â”€ WebSocket Connection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function connectWebSocket(sessionId) {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${location.host}/ws/${sessionId}`;
@@ -168,7 +168,7 @@
     };
 
     ws.onerror = () => {
-      addLog('WebSocket error — using polling fallback', 'error');
+      addLog('WebSocket error - using polling fallback', 'error');
     };
 
     ws.onclose = () => {
@@ -178,7 +178,7 @@
     state.ws = ws;
   }
 
-  // ─── Pipeline Event Handling ────────────────────
+  // â”€â”€â”€ Pipeline Event Handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function handlePipelineEvent(event) {
     state.events.push(event);
 
@@ -199,13 +199,13 @@
         break;
 
       case 'plan_generated':
-        addLog(`Execution plan: ${(event.plan || []).join(' → ')}`, 'info');
+        addLog(`Execution plan: ${(event.plan || []).join(' -> ')}`, 'info');
         break;
 
       case 'pipeline_completed':
-        headerStatus.textContent = 'Analysis complete ✓';
+        headerStatus.textContent = 'Analysis complete';
         pipelineProgress.textContent = '100%';
-        btnAnalyze.textContent = '✓ Analysis Complete';
+        btnAnalyze.textContent = 'Analysis Complete';
         if (event.report) {
           showReport(event.report);
         }
@@ -214,13 +214,13 @@
         break;
 
       case 'pipeline_failed':
-        headerStatus.textContent = 'Pipeline failed ✗';
+        headerStatus.textContent = 'Pipeline failed';
         addLog(`Pipeline failed: ${event.error}`, 'error');
         if (event.phase) {
           setDAGNodeState(event.phase, 'failed');
         }
         btnAnalyze.disabled = false;
-        btnAnalyze.textContent = '🔄 Retry Analysis';
+        btnAnalyze.textContent = 'Retry Analysis';
         break;
 
       default:
@@ -230,7 +230,7 @@
     }
   }
 
-  // ─── DAG Node State ─────────────────────────────
+  // â”€â”€â”€ DAG Node State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const phaseToNode = {
     ingestion: 'dag-ingestion',
     profiling: 'dag-profiling',
@@ -272,11 +272,11 @@
     pipelineProgress.textContent = `${pct}%`;
   }
 
-  // ─── Summary Cards ──────────────────────────────
+  // â”€â”€â”€ Summary Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function updateSummaryCards(phase, result) {
     if (phase === 'ingestion') {
-      addSummaryCard(result.n_rows?.toLocaleString() || '—', 'Rows');
-      addSummaryCard(result.n_cols || '—', 'Columns');
+      addSummaryCard(result.n_rows?.toLocaleString() || '-', 'Rows');
+      addSummaryCard(result.n_cols || '-', 'Columns');
       if (result.quality?.overall_score) {
         addSummaryCard(`${(result.quality.overall_score * 100).toFixed(0)}%`, 'Data Quality');
       }
@@ -303,7 +303,7 @@
     summaryGrid.appendChild(card);
   }
 
-  // ─── Log Stream ─────────────────────────────────
+  // â”€â”€â”€ Log Stream â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function addLog(message, type = 'info') {
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;
@@ -321,7 +321,7 @@
     logCount.textContent = `${logBody.children.length} events`;
   }
 
-  // ─── Report Rendering ──────────────────────────
+  // â”€â”€â”€ Report Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function showReport(markdown) {
     state.reportMarkdown = markdown;
     reportSection.classList.add('visible');
@@ -329,7 +329,7 @@
   }
 
   function renderMarkdown(md) {
-    // Simple Markdown → HTML renderer
+    // Simple Markdown â†’ HTML renderer
     let html = md;
 
     // Horizontal rules
@@ -435,7 +435,7 @@
     return html;
   }
 
-  // ─── Download Report ────────────────────────────
+  // â”€â”€â”€ Download Report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   btnDownload.addEventListener('click', () => {
     if (!state.reportMarkdown) return;
     const blob = new Blob([state.reportMarkdown], { type: 'text/markdown' });
@@ -447,7 +447,7 @@
     URL.revokeObjectURL(url);
   });
 
-  // ─── Utilities ──────────────────────────────────
+  // â”€â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function formatSize(bytes) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -460,3 +460,4 @@
     return div.innerHTML;
   }
 })();
+
